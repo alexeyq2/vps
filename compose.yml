@@ -1,0 +1,95 @@
+services:
+  certbot:
+    # image: certbot/certbot:latest
+    build: ./certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/:/app  # питоновский скрипт, что будет крутиться в контейнере
+      - ./srv/certbot/etc/letsencrypt:/etc/letsencrypt # сертификаты
+      - ./srv/nginx/www/http:/nginx/www/http           # .well-known папка для авторизации домена, см cli.ini.template, webroot-path      
+      - /var/run/docker.sock:/var/run/docker.sock      # доступ к docker из контейнера для рестарта 3x-ui и nginx
+    working_dir: /app
+    environment:
+      PYTHONUNBUFFERED: 1
+      VPS_DOMAIN: "$VPS_DOMAIN"
+      VPS_EMAIL: "$VPS_EMAIL"
+      ACME_SERVER: "$ACME_SERVER"
+    stop_signal: SIGKILL      
+    # для отладки - если не запускается контейнер, запустить с таким entrypoint и войти в него
+    # entrypoint: ['/bin/ash', '-c', 'while :; do echo here; sleep 60; done']
+
+  3x-ui:
+    build: ./3x-ui
+    restart: unless-stopped
+    volumes:
+      - ./srv/3x-ui/etc/x-ui/:/etc/x-ui/
+      - ./srv/certbot/etc/letsencrypt:/etc/letsencrypt # прокидываем папку с сертификатом из certbot в xray
+      - ./_work/3x-ui/update_geo/:/app/update_geo      # логи обновления geo*.dat файлов
+    network_mode: host
+    environment:
+      XRAY_VMESS_AEAD_FORCED: "false"
+      X_UI_ENABLE_FAIL2BAN: "true"
+    labels:
+      - certbot_restart
+
+  nginx:
+    image: nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/90-toggle-ssl-server.sh:/docker-entrypoint.d/90-toggle-ssl-server.sh
+      - ./srv/certbot/etc/letsencrypt/:/etc/letsencrypt/ # прокидываем папку с сертификатом из certbot в nginx
+      - ./srv/nginx/www:/www                             # статический html и .well-known для certbot
+      - ./srv/nginx/etc/templates:/etc/nginx/templates   # шаблоны, из них будут сгенерированы *.conf файлы при каждом старте
+      - ./_work/nginx/etc/conf.d:/etc/nginx/conf.d       # *.conf файлы - в рабочую папку на хосте (для отладки)
+    ports:
+      - 80:80
+      - 127.0.0.1:10443:443  # 3x-ui перенаправляет на 127.0.0.1:10443, далее докер в 443 контейнера
+      - 9090:9090 # можно запустить доп ssl сервер на 9090, например
+    environment:
+      - VPS_DOMAIN=${VPS_DOMAIN}
+      - FILEBROWSER_FOLDER=${FILEBROWSER_FOLDER}
+    command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/conf.d/default.conf"]
+    labels:
+      - certbot_restart
+    # entrypoint: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']
+
+  sharry:
+    image: eikek0/sharry:latest
+    command: /opt/sharry.conf
+    # ports:
+    #   - 127.0.0.1:9090:9090
+    volumes:
+      - ./srv/sharry/opt/sharry.conf:/opt/sharry.conf
+      - ./srv/sharry/files:/files/
+      - ./srv/sharry/h2_data:/h2_data/  # если заработает H2 database - удобнее postgres. у меня в текущем релизе sql syntax error
+    depends_on:
+      - sharry-db
+  sharry-db:
+    image: postgres:latest
+    volumes:
+      - ./srv/sharry/postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=12345
+      - POSTGRES_DB=sharry
+      - PGUSER=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "sharry"]
+      interval: 15s
+      timeout: 60s
+      retries: 5
+      start_period: 15s
+
+  filebrowser:
+    image: filebrowser/filebrowser:s6
+    restart: unless-stopped
+    stop_signal: SIGKILL  # так быстрее и база вроде не рушится
+    tty: true
+    # ports:
+    #   - 127.0.0.1:9091:80
+    volumes:
+      - ./srv/filebrowser/files:/srv
+      - ./srv/filebrowser/database:/database
+      - ./srv/filebrowser/config:/config
+    environment:
+      - FB_BASEURL=${FILEBROWSER_FOLDER}

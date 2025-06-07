@@ -1,0 +1,17 @@
+events {
+}
+
+http {
+    server {
+        listen 80;
+
+        root /www/http;
+        index index.html;
+        
+        # пусть docker занимается ротацией лог-файлов
+        access_log /dev/stdout;
+        error_log /dev/stderr;
+    }
+
+    include ssl_server*.conf;        
+}

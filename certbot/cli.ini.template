@@ -1,0 +1,16 @@
+# /etc/letsencrypt/cli.ini 
+
+domain = $VPS_DOMAIN
+email = $VPS_EMAIL
+server = $ACME_SERVER
+
+authenticator = webroot
+webroot-path = /nginx/www/http
+deploy-hook=/app/restart_certbot_containers.py
+
+text = True
+agree-tos = True
+non-interactive = True
+debug = True
+# verbose-level = 2 # -vv (debug)
+verbose-level = 1

@@ -1,0 +1,6 @@
+_work
+_work.save
+srv/*
+.env
+*.deleted
+

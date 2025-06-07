@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting to HTTPS...</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #0f0;
+      font-family: "Courier New", Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #countdown {
+      font-size: 150px;
+      margin-bottom: 40px;
+      margin-top: 40px;
+    }
+    .message {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #ccc;
+    }
+    a {
+      color: #0ff;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!--div class="message">This is plain http, sorry.</div-->
+  <div id="countdown">60</div>
+  <div class="message">
+    Redirecting to <a id="redirect-link" href="#"><span id="redirect-span">https://</span></a> 
+      in 
+    <span id="seconds">60</span> milli-seconds
+  </div>
+
+  <script>
+    const countdown = document.getElementById('countdown');
+    const seconds = document.getElementById('seconds');
+    const link = document.getElementById('redirect-link');
+    const span = document.getElementById('redirect-span');
+    const httpsUrl = 'https://' + location.hostname + location.pathname + location.search;
+
+    link.href = httpsUrl;
+    span.textContent = httpsUrl;
+
+    const WAIT_SEC = 5;
+    const FPS = 3
+    let remaining = WAIT_SEC * 1000;
+    countdown.textContent = remaining;
+
+    const interval = setInterval(() => {
+      remaining -= Math.round(2000/FPS * (Math.random()));
+      countdown.textContent = remaining;
+      seconds.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        link.click();
+        countdown.style.color = "#0ff";
+      }
+    }, 1000/FPS);
+  </script>
+</body>
+</html>
