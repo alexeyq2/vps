@@ -28,12 +28,11 @@ copy srv-default to srv and repeat installation steps (set up config files and p
 
 ## Switch testing (staging) certificate to production
 
-docker compose stop
-sudo rm -rf srv/certbot
-docker compose start
+    docker compose stop
+    sudo rm -rf srv/certbot
+    docker compose start
 
 docker compose logs -f certbot
-# it will print like this:
     certbot_1      | certbot renew loop start [...]
     ...
     certbot_1      | Requesting a certificate for <VPS_DOMAIN>
