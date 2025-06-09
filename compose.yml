@@ -58,8 +58,6 @@ services:
     restart: unless-stopped
     stop_signal: SIGKILL  # так быстрее и база вроде не рушится
     tty: true
-    # ports:
-    #   - 127.0.0.1:9091:80
     volumes:
       - ./srv/filebrowser/files:/srv
       - ./srv/filebrowser/database:/database
