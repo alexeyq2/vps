@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Redirecting to HTTPS...</title>
+  <title>Plain HTTP, redirect</title>
   <style>
     body {
       background-color: #111;
@@ -14,11 +14,6 @@
       justify-content: center;
       height: 100vh;
       margin: 0;
-    }
-    #countdown {
-      font-size: 150px;
-      margin-bottom: 40px;
-      margin-top: 40px;
     }
     .message {
       font-size: 18px;
@@ -32,16 +27,13 @@
   </style>
 </head>
 <body>
-  <!--div class="message">This is plain http, sorry.</div-->
-  <div id="countdown">60</div>
   <div class="message">
     Redirecting to <a id="redirect-link" href="#"><span id="redirect-span">https://</span></a> 
       in 
-    <span id="seconds">60</span> milli-seconds
+    <span id="seconds"></span> ms
   </div>
 
   <script>
-    const countdown = document.getElementById('countdown');
     const seconds = document.getElementById('seconds');
     const link = document.getElementById('redirect-link');
     const span = document.getElementById('redirect-span');
@@ -50,21 +42,22 @@
     link.href = httpsUrl;
     span.textContent = httpsUrl;
 
-    const WAIT_SEC = 5;
-    const FPS = 3
+    const WAIT_SEC = 60;
+    const FPS = 0.75;
     let remaining = WAIT_SEC * 1000;
-    countdown.textContent = remaining;
 
-    const interval = setInterval(() => {
+    function tick() {
       remaining -= Math.round(2000/FPS * (Math.random()));
-      countdown.textContent = remaining;
       seconds.textContent = remaining;
       if (remaining <= 0) {
         clearInterval(interval);
         link.click();
-        countdown.style.color = "#0ff";
       }
-    }, 1000/FPS);
+    }
+
+    const interval = setInterval(tick, 1000/FPS);
+
+    tick();
   </script>
 </body>
 </html>
