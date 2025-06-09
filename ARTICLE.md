@@ -39,4 +39,14 @@ chown 10001 srv/sharry/h2_data srv/sharry/files
 после установки и запуска
 docker compose logs certbot
 открыть http://<VPS_SERVER>:80
-будет страница-перенаправялка на https.
+будет страница-перенаправялка на https. эту удача, nginx работает. но https пока еще нет - 443 порт доступен только на 127.0.0.1,
+прослушивать публичный адрес будет XRay. заходим на 3X-UI
+
+сетрификаты
+/etc/letsencrypt/live/<VPS_DOMAIN>/fullchain.pem
+/etc/letsencrypt/live/<VPS_DOMAIN>/privkey.pem
+
+поменять порт и URI path
+
+restart panel
+

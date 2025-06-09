@@ -53,32 +53,46 @@ services:
       - certbot_restart
     # entrypoint: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']
 
-  sharry:
-    image: eikek0/sharry:latest
-    command: /opt/sharry.conf
+  # sharry:
+  #   image: eikek0/sharry:latest
+  #   command: /opt/sharry.conf
+  #   # ports:
+  #   #   - 127.0.0.1:9090:9090
+  #   volumes:
+  #     - ./srv/sharry/opt/sharry.conf:/opt/sharry.conf
+  #     - ./srv/sharry/files:/files/
+  #     - ./srv/sharry/h2_data:/h2_data/  # если заработает H2 database - удобнее postgres. у меня в текущем релизе sql syntax error
+  #   depends_on:
+  #     - sharry-db
+  # sharry-db:
+  #   image: postgres:latest
+  #   volumes:
+  #     - ./srv/sharry/postgres_data:/var/lib/postgresql/data/
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=12345
+  #     - POSTGRES_DB=sharry
+  #     - PGUSER=postgres
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready", "-d", "sharry"]
+  #     interval: 15s
+  #     timeout: 60s
+  #     retries: 5
+  #     start_period: 15s
+  pingvin:
+    image: stonith404/pingvin-share # or ghcr.io/stonith404/pingvin-share
+    restart: unless-stopped
     # ports:
-    #   - 127.0.0.1:9090:9090
-    volumes:
-      - ./srv/sharry/opt/sharry.conf:/opt/sharry.conf
-      - ./srv/sharry/files:/files/
-      - ./srv/sharry/h2_data:/h2_data/  # если заработает H2 database - удобнее postgres. у меня в текущем релизе sql syntax error
-    depends_on:
-      - sharry-db
-  sharry-db:
-    image: postgres:latest
-    volumes:
-      - ./srv/sharry/postgres_data:/var/lib/postgresql/data/
+    #   - 3000:3000
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
-      - POSTGRES_DB=sharry
-      - PGUSER=postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "sharry"]
-      interval: 15s
-      timeout: 60s
-      retries: 5
-      start_period: 15s
+      - TRUST_PROXY=true # Set to true if a reverse proxy is in front of the container
+    volumes:
+      - "./srv/pingvin/data:/opt/app/backend/data"
+      - "./srv/pingvin/images:/opt/app/frontend/public/img"
+      # - "./config.yaml:/opt/app/config.yaml" # Add this line, if you want to configure pingvin-share via config file and not via UI
+  
+    # To add ClamAV, to scan your shares for malicious files, 
+    # see https://stonith404.github.io/pingvin-share/setup/integrations/#clamav-docker-only
 
   filebrowser:
     image: filebrowser/filebrowser:s6
