@@ -5,3 +5,5 @@ grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null || echo "SystemMa
 systemctl restart systemd-journald
 
 echo OK
+
+./print_my_opts.sh
