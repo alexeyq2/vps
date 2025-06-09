@@ -79,20 +79,42 @@ services:
   #     timeout: 60s
   #     retries: 5
   #     start_period: 15s
-  pingvin:
-    image: stonith404/pingvin-share # or ghcr.io/stonith404/pingvin-share
-    restart: unless-stopped
-    # ports:
-    #   - 3000:3000
-    environment:
-      - TRUST_PROXY=true # Set to true if a reverse proxy is in front of the container
-    volumes:
-      - "./srv/pingvin/data:/opt/app/backend/data"
-      - "./srv/pingvin/images:/opt/app/frontend/public/img"
-      # - "./config.yaml:/opt/app/config.yaml" # Add this line, if you want to configure pingvin-share via config file and not via UI
+
+  # pingvin:
+  #   image: stonith404/pingvin-share # or ghcr.io/stonith404/pingvin-share
+  #   restart: unless-stopped
+  #   # ports:
+  #   #   - 3000:3000
+  #   environment:
+  #     - TRUST_PROXY=true # Set to true if a reverse proxy is in front of the container
+  #   volumes:
+  #     - "./srv/pingvin/data:/opt/app/backend/data"
+  #     - "./srv/pingvin/images:/opt/app/frontend/public/img"
+  #     # - "./config.yaml:/opt/app/config.yaml" # Add this line, if you want to configure pingvin-share via config file and not via UI
   
-    # To add ClamAV, to scan your shares for malicious files, 
-    # see https://stonith404.github.io/pingvin-share/setup/integrations/#clamav-docker-only
+  #   # To add ClamAV, to scan your shares for malicious files, 
+  #   # see https://stonith404.github.io/pingvin-share/setup/integrations/#clamav-docker-only
+
+  cells:
+    image: pydio/cells:latest
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:8080:8080      
+    volumes:
+      - ./srv/cells/var-cells:/var/cells
+      - ./srv/cells/var-cells-data:/var/cells/data
+
+  cells-mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: P@ssw0rd
+      MYSQL_DATABASE: cells
+      MYSQL_USER: cells
+      MYSQL_PASSWORD: cells
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci]
+    volumes:
+      - ./srv/cells/var-lib-mysql:/var/lib/mysql
 
   filebrowser:
     image: filebrowser/filebrowser:s6
