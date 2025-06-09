@@ -50,3 +50,7 @@ docker compose logs certbot
 
 restart panel
 
+===
+европейский сервер - в настройке outbound указать short id - один из возможных
+в QRкоде уже генерится, а в ручную нужно ставить. можно посмотреть в nekoray
+
