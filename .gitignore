@@ -1,6 +1,8 @@
 _work
-_work.save
-srv/*
+srv
 .env
 *.deleted
+bbr.sh
+*.log
+
 
