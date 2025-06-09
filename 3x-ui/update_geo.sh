@@ -83,10 +83,10 @@ need_download() {
   [ ! -f $file.info ] && echo "$file has been not downloaded yet" && return 0
 
   info="$(get_url_info $url)"
-  prev=$(cat $file.info)  # cat - конструкция $(<file.info) не работает в ash
+  prev=$(cat $file.info)
 
-  # красивый одностроковый "bashism" вместо громоздкого if/else/then
-  [ "$info" = "$prev" ] && echo "" || echo "$file changed"
+  # одностроковый "bashism" заменяет if/else/then
+  [ "$info" = "$prev" ] && echo "" || echo "$file has been changed"
 }
 
 download()
@@ -105,7 +105,7 @@ download()
 }
 
 restart_xray() {
-  XRAY_PID=$(pgrep xray-linux || true) # или true чтобы не упало по ошибке если pgrep не нашел
+  XRAY_PID=$(pgrep xray-linux || true) # или true чтобы не упало по ошибке если pgrep не нашел (скрипт работает с параметром -e)
   if [ "$XRAY_PID" != "" ]; then
     echo Restart xray pid=$XRAY_PID && kill $(pgrep xray-linux)
   else
@@ -136,7 +136,7 @@ start_sec=$(date +%s)
 update_geo
 
 ### суперфича скриптов - "here-doc"
-<<USE_IN_ROUTES
+<<HOW_TO_USE_IN_ROUTES
 
 in 3x-ui no spaces (!), comma-delimited
 in nekoray - line by line
@@ -165,7 +165,7 @@ regexp:.*\.ru$,
 regexp:.*\.xn--p1ai$  
        ^ домены .рф ^
 
-USE_IN_ROUTES
-# закончен HERE-doc, продолжается скрипт. важно после метки USE_IN_ROUTES не оставить пробел!
+HOW_TO_USE_IN_ROUTES
+# закончен HERE-doc, продолжается скрипт. важно после метки HOW_TO_USE_IN_ROUTES не оставить пробел!
 
 echo Geofiles update OK in $(($(date +%s) - start_sec)) sec
