@@ -2,7 +2,7 @@ events {
 }
 
 http {
-    # Standatd "combined" log_format is as follows:
+    # Standard "combined" log_format is as follows:
     #     
     # log_format combined '$remote_addr - $remote_user [$time_local] '
     #                     '"$request" $status $body_bytes_sent '
