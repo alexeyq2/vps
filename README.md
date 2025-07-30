@@ -1,41 +1,41 @@
+# VPS for masses
+- 3X-UI web panel for X-Ray
+- autoupdate X-Ray geodat files for routing
+- your own website with Let's Encrypt SSL certificate for VLESS
+- preinstalled web-based file share
+
+## Provision fresh VPS (Ubuntu 24.04 LTS)
+1. `./setup-docker.sh`  # install docker and docker compose
+2. `./setup-syslog.sh`  # reduce systemlog size (default is too much and eats disk space)
+3. `./optimize.sh`      # set up better TCP packets processig (BBR)
+
 ## Installation
-1. `cp .env-default .env`
-2. edit .env file
-  - VPS_DOMAIN, VPS_EMAIL
-  - ACME_SERVER - choose staging server (for testing) or production server
-3. `cp -r srv-default srv`
-4. "srv" is where configs and data will live
-5. `sudo ./setup.sh`
-6. `./up.sh` # docker compose up [-d]
-7. `./down.sh` # docker compose logs [-f]
+1. `cp .env-default .env` # file with your domain name
+2. edit .env file, variables:
+  - VPS_DOMAIN - your domain
+  - VPS_EMAIL  - your email (optional, for Let's Encrypt)
+  - ACME_SERVER - choose Let's Encrypt testing server or production server
+3. `cp -r srv-default srv`  # "srv" is where configs and data files will live
+4. `sudo ./setup.sh`
 
-## Update
-`./update.sh`
+## Start, Stop, Logs
 
-## Folders
-    srv - config files, database, uploaded files
-        - keep this folder when update or reinstall
-    srv-default - copy to "srv" and begin with it
-    _work - working files. safe to remove
+* `./up.sh`   # docker compose up [-d]
+* `./down.sh` # docker compose down
+* `./log.sh` # docker compose logs [-f]
 
-## Reinstall
-- `./down.sh`
-- `reinstall.sh`
-- `./up.sh`
+## Switch testing certificate to production
 
-Basically, copy srv-default to srv and repeat installation steps (set up config files and permissions)
+If everything runs and your website opend has testing SSL cert, you want real certificate. 
 
-## Switch testing (staging) certificate to production
-
-Edit .env, ACME_SERVER and run
-
-`./update.sh`
+1. Uncomment production ACME_SERVER in .env file and run
+2. Run `./update.sh`
 
 Check that certbot has got new cert
 
-`docker compose logs -f certbot`
+3. `docker compose logs -f certbot`
 
-should lool like below:
+Output should lool like below:
 
     certbot_1      | certbot renew loop start
     ...
@@ -46,3 +46,22 @@ should lool like below:
     certbot_1      | Hook 'deploy-hook' ran with output:
     certbot_1      |  Restarting containers with "certbot_restart" label
     certbot_1      |  Restart container vps_3x-ui_1
+
+## Update
+`./update.sh`
+
+## Reinstall
+- `./down.sh`
+- `./reinstall.sh`
+- `./up.sh`
+
+Basically, copy srv-default to srv and repeat installation steps (set up config files and permissions)
+
+
+## Important folders and files
+    srv - config files, database, uploaded files
+        - keep this folder when update or reinstall
+    srv-default - copy to "srv" and begin with it
+    _work - working files. safe to remove
+    .env - here you set up your domain name
+
