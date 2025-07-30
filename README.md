@@ -1,4 +1,5 @@
 # VPS for masses
+
 - 3X-UI web panel for X-Ray
 - autoupdate X-Ray geodat files for routing
 - your own website with Let's Encrypt SSL certificate for VLESS
@@ -48,9 +49,18 @@ Output should lool like below:
     certbot_1      |  Restart container vps_3x-ui_1
 
 ## Update
+
+update everything
+
+`git pull && ./update.sh`
+
+update 3X-UI and nginx only
+
 `./update.sh`
 
+
 ## Reinstall
+
 - `./down.sh`
 - `./reinstall.sh`
 - `./up.sh`
@@ -59,6 +69,7 @@ Basically, copy srv-default to srv and repeat installation steps (set up config 
 
 
 ## Important folders and files
+
     srv - config files, database, uploaded files
         - keep this folder when update or reinstall
     srv-default - copy to "srv" and begin with it
