@@ -27,9 +27,9 @@
 
 ## Switch testing certificate to production
 
-If everything runs and your website opend has testing SSL cert, you want real certificate. 
+If everything runs and your website opens and has testing SSL cert, you want real certificate. 
 
-1. Uncomment production ACME_SERVER in .env file and run
+1. Uncomment production ACME_SERVER in .env file
 2. Run `./update.sh`
 
 Check that certbot has got new cert

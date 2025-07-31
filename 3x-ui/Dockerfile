@@ -10,11 +10,11 @@ FROM ghcr.io/mhsanaei/3x-ui:latest
 # - /cert/MYDOMAIN.key
 #
 # зайти в контейнер:
-# docker-compose exec 3x-ui sh
+# docker-compose exec 3x-ui bash
 #    (или сразу - mc)
 # docker-compose exec 3x-ui mc
 #
-RUN apk add --no-cache curl mc
+RUN apk add --no-cache curl bash mc
 COPY DockerEntrypoint2.sh update_geo.sh crontab.txt /app/
 RUN chmod 755 /app/update_geo.sh /app/DockerEntrypoint2.sh
 

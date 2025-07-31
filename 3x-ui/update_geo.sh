@@ -1,7 +1,7 @@
-#!/bin/ash -e
+#!/bin/bash -e
 # можно и -ex
 <<DOC
-флаги запуска скрипта для ash/bash
+флаги запуска скрипта bash
 
 -e: останавливать по ошибке если выполненная команда вернула не 0.
     хорошо для надежности, но накладывает определенный стиль,
@@ -9,52 +9,12 @@
     в таких случаях можно писать $(command || true)
 
 -ex: отладка, печатать выполняемую строчку
-
-== разработка на Kububtu, сразу под Alpine/ash, есть отличия от bash
-
-1. в контейнере запускать скрипт из смонтированной в /app текущей папки
-   для краткости добавить в ~/.bashrc
-
-alias dco="docker container"
-
-   перезапустить терминал (или в нем же запустить новый bash)
-
-dco create -v .:/app alpine /app/update_geo.sh
-622...84fec
-
-2. запустить, смотреть лог и остановить по Ctrl-C
-
-NN=622 bash -c -i 'dco start $NN && dco logs $NN -f -n 0 || dco stop $NN -s 9'
- 
-  конструкция (cmd1 && cmd2 || cmd3) выполнит cmd3 после прерывания cmd2.
-  
-  cmd1 - запустит контейнер в фоне
-  cmd2 - будет выдавать логи до прерывания по Ctrl-C и вернет ошибку
-  cmd3 - остановит контейнер без мучений (SIGKILL=9)
-
-  bash -i нужно чтобы считался .bashrc
-  -c чтобы запускался дочерний процесс, в котором есть переменная NN
-
-  полезные команды
-dco ps, dco run, dco -ti exec, dco prune (!) docker system prune (!)
-
-== можно сидеть прямо в контейнере
-
-dco run -v .:/app alpine sh -c 'while :; do echo here; sleep 60; done'
-# посмотреть ID контейнера и зайти в него
-dco ps
-622...84fec
-dco exec -ti 622 sh
-  / # внутри
-app/update_geo.sh
- 
 DOC
 
 # случайная задержка ~1min, хорошо для периодичных задач cron
 delay=$((RANDOM % 60 + 10))  # ого! в shell есть генератор случайный чисел [0...65535]
 echo $(date)
-echo Start geofiles update in $delay seconds
-sleep $delay
+[ "$1" != "now" ] && echo "Start geofiles update in $delay seconds" && sleep $delay
 
 ### настройки скрипта и подготовка
 
@@ -71,22 +31,34 @@ cd $WORKDIR
 # глобальные переменные - это нормально!
 nDownloads="0"
 
-get_url_info() {
+
+get_file_size() {
+  file=$1
+  [ -f $file ] && stat -c %s $file || echo "0"
+}
+
+get_url_size() {
   # HTTP HEAD, следовать по всем редиректам (location) и взять размер последнего (tail -1)
-  echo "$(curl --silent --head --location $1 | grep content-length | tail -1)"
+  # будет строка вида
+  # Content-Length: 12345\r
+  # далее awk '{print $2}' возьмет 2й столбец
+  # далее tr -cd 0-9 - удалит \r, который может быть в конце (оставит только числа)
+  url=$1
+  length="$(curl --silent --head --location $url | grep -i content-length | tail -1 | awk '{print $2}' | tr -cd 0-9)"
+  echo $length
 }
 
 need_download() {
   url=$1
-  file=$2
+  file=$APPDIR/$2
 
-  [ ! -f $file.info ] && echo "$file has been not downloaded yet" && return 0
+  [ ! -f $file ] && echo "$file has been not downloaded yet" && return 0
 
-  info="$(get_url_info $url)"
-  prev=$(cat $file.info)
+  latest="$(get_url_size $url)"
+  existing=$(get_file_size $file)
 
   # одностроковый "bashism" заменяет if/else/then
-  [ "$info" = "$prev" ] && echo "" || echo "$file has been changed"
+  [ "$latest" = "$existing" ] && echo "" || echo "$file size has been changed, '$latest' != '$existing'"
 }
 
 download()
@@ -97,7 +69,6 @@ download()
   if [ "$(need_download $url $file)" != "" ]; then
     echo $file $url
     curl -L -s $url >$file
-    echo "$(get_url_info $url)" > $file.info
     nDownloads=$((nDownloads + 1)) # shell понимает арифметику в $((в двойных скобках)) 
   else
     echo "$file is up-to-date"
