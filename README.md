@@ -1,14 +1,12 @@
 # VPS for masses
 
 - 3X-UI web panel for X-Ray
-- autoupdate X-Ray geodat files for routing
+- autoupdate X-Ray geo.dat files for routing
 - your own website with Let's Encrypt SSL certificate for VLESS
 - preinstalled web-based file share
 
-## Provision fresh VPS (Ubuntu 24.04 LTS)
-1. `./setup-docker.sh`  # install docker and docker compose
-2. `./setup-syslog.sh`  # reduce systemlog size (default is too much and eats disk space)
-3. `./optimize.sh`      # set up better TCP packets processig (BBR)
+## Installation on fresh VPS (Ubuntu 24.04 LTS)
+1. `./setup-all.sh`  # install docker etc.
 
 ## Installation
 1. `cp .env-default .env` # file with your domain name
@@ -16,8 +14,16 @@
   - VPS_DOMAIN - your domain
   - VPS_EMAIL  - your email (optional, for Let's Encrypt)
   - ACME_SERVER - choose Let's Encrypt testing server or production server
-3. `cp -r srv-default srv`  # "srv" is where configs and data files will live
-4. `sudo ./setup.sh`
+3. `cp -r srv-default srv`  # "srv" is where configs and data files live
+
+## Important folders and files
+
+    srv - config files, database, file sharing files
+        - keep this folder when update or reinstall
+    srv-default - copy to "srv" and begin with it
+    _work - working files. safe to remove
+    .env - here you set up your domain name
+
 
 ## Start, Stop, Logs
 
@@ -30,7 +36,7 @@
 If everything runs and your website opens and has testing SSL cert, you want real certificate. 
 
 1. Uncomment production ACME_SERVER in .env file
-2. Run `./update.sh`
+2. Run `./update.sh`, it will rebuild certbot
 
 Check that certbot has got new cert
 
@@ -54,25 +60,17 @@ update everything
 
 `git pull && ./update.sh`
 
-update 3X-UI and nginx only
+update 3X-UI, cerbot and nginx only
 
 `./update.sh`
 
 
-## Reinstall
+## Reconfig from scratch
 
 - `./down.sh`
-- `./reinstall.sh`
+- `./reconfig.sh`
 - `./up.sh`
 
-Basically, copy srv-default to srv and repeat installation steps (set up config files and permissions)
+Basically, copy srv-default to srv and repeat installation steps
 
-
-## Important folders and files
-
-    srv - config files, database, uploaded files
-        - keep this folder when update or reinstall
-    srv-default - copy to "srv" and begin with it
-    _work - working files. safe to remove
-    .env - here you set up your domain name
 

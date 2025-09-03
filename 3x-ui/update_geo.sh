@@ -69,6 +69,10 @@ download()
   if [ "$(need_download $url $file)" != "" ]; then
     echo $file $url
     curl -L -s $url >$file
+    if [ "$(get_file_size $file)" -eq 0 ]; then
+      echo "Error download $url"
+      return 1
+    fi
     nDownloads=$((nDownloads + 1)) # shell понимает арифметику в $((в двойных скобках)) 
   else
     echo "$file is up-to-date"
