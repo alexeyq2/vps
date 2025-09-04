@@ -11,7 +11,7 @@
 # min   hour  day of month   month  day of week    command
 # ---   ---   ------------   -----  -----------    ------------------
 
-10      */6        *          *       *      /app/update_geo.sh > /app/update_geo/update_geo.log 2>>&1
+10      */6        *          *       *      /app/update_geo.sh >> /app/update_geo/update_geo.log 2>&1
 # каждые 6 часов в 10 минут
 # конструкция 2>&1 значит перенаправить stderr (поток 2) в stdout (поток 1)
 # так как stdout уже перенаправлен в update_geo.log, stderr направится туда же
