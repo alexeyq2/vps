@@ -1,2 +1,2 @@
 source dc.inc.sh
-$DC logs -f $*
+$DC -n 1000 logs -f $*

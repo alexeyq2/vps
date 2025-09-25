@@ -11,10 +11,11 @@
 -ex: отладка, печатать выполняемую строчку
 DOC
 
+echo "START $(date)"
+
 # случайная задержка ~1min, хорошо для периодичных задач cron
-delay=$((RANDOM % 60 + 10))  # ого! в shell есть генератор случайный чисел [0...65535]
-echo $(date)
-[ "$1" != "now" ] && echo "Start geofiles update in $delay seconds" && sleep $delay
+delay=$((RANDOM % 60 + 10))  # в shell есть генератор случайный чисел [0...65535]
+[ "$1" != "now" ] && echo "Begin geofiles update in $delay seconds" && sleep $delay
 
 ### настройки скрипта и подготовка
 
@@ -100,7 +101,7 @@ update_geo() {
 
   if [ "$nDownloads" != "0" ]; then
     echo Geofiles are different, update
-    mv -f geo*.dat $APPDIR
+    cp -f geo*.dat $APPDIR
     restart_xray
   fi
 }
