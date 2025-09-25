@@ -58,11 +58,11 @@ Output should lool like below:
 
 update everything
 
-`git pull && ./update.sh`
+`./update-all.sh`
 
 update 3X-UI, cerbot and nginx only
 
-`./update.sh`
+`./update-3xui.sh`
 
 
 ## Reconfig from scratch
