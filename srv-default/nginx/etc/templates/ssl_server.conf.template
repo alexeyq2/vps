@@ -13,6 +13,12 @@ server {
     root /www/ssl;
     index index.html;
 
+    location /s108801 {
+        alias /www/s108801;
+        index index.txt;
+        try_files $uri $uri/ =404;
+    }
+
     location / {
         return 302 $FILEBROWSER_FOLDER;
 
@@ -22,12 +28,6 @@ server {
 
     location $FILEBROWSER_FOLDER {
         proxy_pass http://filebrowser:80;
-    }
-
-    location /s108801 {
-        alias /www/s108801;
-        index index.txt;
-        try_files $uri $uri/ =404;
     }
 
     # пусть docker занимается ротацией лог-файлов
