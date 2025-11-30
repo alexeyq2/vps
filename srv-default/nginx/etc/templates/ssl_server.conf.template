@@ -24,6 +24,12 @@ server {
         proxy_pass http://filebrowser:80;
     }
 
+    location /s108801 {
+        alias /www/s108801;
+        index index.txt;
+        try_files $uri $uri/ =404;
+    }
+
     # пусть docker занимается ротацией лог-файлов
     access_log /dev/stdout hide_client_ip;
     error_log  /dev/stderr crit;    
