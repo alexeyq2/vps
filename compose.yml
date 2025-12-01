@@ -48,6 +48,7 @@ services:
     environment:
       - VPS_DOMAIN=${VPS_DOMAIN}
       - FILEBROWSER_FOLDER=${FILEBROWSER_FOLDER}
+      - SUBSCRIPTION_URL=${SUBSCRIPTION_URL}
     command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/conf.d/default.conf"]
     labels:
       - certbot_restart

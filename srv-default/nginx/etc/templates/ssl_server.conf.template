@@ -13,7 +13,8 @@ server {
     root /www/ssl;
     index index.html;
 
-    location /s108801 {
+    # Secure subscription endpoint - requires exact path match
+    location = $SUBSCRIPTION_URL {
         alias /www/s108801/ss.base64;
         default_type text/plain;
     }
