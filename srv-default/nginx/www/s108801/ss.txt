@@ -1,0 +1,2 @@
+vless://12345678-1234-1234-1234-123456789@example.com:443?encryption=none&security=tls&sni=example.com&type=ws&path=/vless&host=example.com#Example%20Server
+vless://72134879-1231-3333-8187-614982336@donor.com:443?encryption=none&security=tls&sni=donor.com&type=ws&path=/vless&host=donor.com#Cool

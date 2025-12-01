@@ -14,9 +14,8 @@ server {
     index index.html;
 
     location /s108801 {
-        alias /www/s108801;
-        index index.txt;
-        try_files $uri $uri/ =404;
+        alias /www/s108801/ss.base64;
+        default_type text/plain;
     }
 
     location / {
