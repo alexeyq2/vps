@@ -15,7 +15,7 @@ server {
 
     # Secure subscription endpoint - requires exact path match
     location = $SUBSCRIPTION_URL {
-        alias /www/s108801/ss.base64;
+        alias /www/subscription/ss.base64;
         default_type text/plain;
     }
 
