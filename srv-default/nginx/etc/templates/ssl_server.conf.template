@@ -20,13 +20,13 @@ server {
     }
 
     location / {
-        return 302 $FILEBROWSER_FOLDER;
+        return 302 $FILEBROWSER_URL;
 
         # или отдавать статику из /www/ssl (директива root)
         # try_files $uri $uri/ =404;
     }
 
-    location $FILEBROWSER_FOLDER {
+    location $FILEBROWSER_URL {
         proxy_pass http://filebrowser:80;
     }
 
