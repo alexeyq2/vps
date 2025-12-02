@@ -58,7 +58,7 @@ docker_client = None
 stop_event = threading.Event()
 
 def _handle_termination(signum, frame):
-    log.info(f"Received signal {signum}, shutting down")
+    log.debug(f"Received signal {signum}, shutting down")
     stop_event.set()
 
 
@@ -86,7 +86,7 @@ def get_file_size(filepath):
 def need_download(url, local_file):
     """Check if file needs to be downloaded by comparing sizes"""
     if not local_file.exists():
-        log.debug(f"{local_file.name} has not been downloaded yet")
+        log.info(f"{local_file.name} has not been downloaded yet")
         return True
     
     latest_size = get_url_size(url)

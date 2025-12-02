@@ -80,7 +80,7 @@ class TestNeedDownload:
         
         result = main.need_download("https://example.com/file.dat", local_file)
         assert result is True
-        mock_log.debug.assert_called()
+        mock_log.info.assert_called()
     
     @patch('main.get_url_size')
     @patch('main.get_file_size')
@@ -94,7 +94,7 @@ class TestNeedDownload:
         
         result = main.need_download("https://example.com/file.dat", local_file)
         assert result is True
-        mock_log.debug.assert_called()
+        mock_log.info.assert_called()
     
     @patch('main.get_url_size')
     @patch('main.get_file_size')
@@ -120,7 +120,7 @@ class TestNeedDownload:
         
         result = main.need_download("https://example.com/file.dat", local_file)
         assert result is False
-        mock_log.debug.assert_called()
+        mock_log.warning.assert_called()
 
 
 class TestDownloadFile:
@@ -141,7 +141,7 @@ class TestDownloadFile:
         result = main.download_file("https://example.com/file.dat", test_file)
         assert result is True
         assert test_file.exists()
-        mock_get.assert_called_once_with("https://example.com/file.dat", allow_redirects=True, timeout=60, stream=True)
+        mock_get.assert_called_once_with("https://example.com/file.dat", allow_redirects=True, timeout=20, stream=True)
     
     @patch('main.requests.get')
     @patch('main.get_file_size')
@@ -236,7 +236,7 @@ class TestRestartXray:
         
         result = main.restart_xray(mock_container)
         assert result is False
-        mock_log.debug.assert_called()
+        mock_log.warning.assert_called()
     
     @patch('main.log')
     def test_restart_xray_empty_pid(self, mock_log):
@@ -249,7 +249,7 @@ class TestRestartXray:
         
         result = main.restart_xray(mock_container)
         assert result is False
-        mock_log.debug.assert_called()
+        mock_log.warning.assert_called()
     
     @patch('main.log')
     def test_restart_xray_error(self, mock_log):
