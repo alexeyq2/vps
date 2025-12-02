@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import random
+import argparse
 import tarfile
 import tempfile
 from datetime import datetime
@@ -240,12 +241,24 @@ def main():
     """Main loop"""
     log("START")
     
-    # Random delay on startup (10-70 seconds) to avoid simultaneous updates
-    delay = random.randint(10, 70)
-    if len(sys.argv) > 1 and sys.argv[1] == "now":
-        log("Running immediately (now flag)")
+    # Default: run immediately. Use --delay to sleep before first run.
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--delay", nargs='?', type=int, const=-1,
+                        help="sleep before first run; provide a number in seconds or omit to sleep a random 10-60s")
+    # parse known args only so other positional args are preserved if used elsewhere
+    args, _ = parser.parse_known_args()
+
+    if args.delay is None:
+        log("Running immediately (default)")
     else:
-        log(f"Begin geofiles update in {delay} seconds")
+        # If user provided --delay without value (const == -1), pick random 10-60
+        if args.delay == -1:
+            delay = random.randint(10, 60)
+        else:
+            # use provided numeric value, but clamp to sensible range (>=0)
+            delay = max(0, args.delay)
+
+        log(f"Begin geofiles update in {delay} seconds (delay requested)")
         time.sleep(delay)
     
     # Connect to Docker
