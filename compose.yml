@@ -18,7 +18,7 @@ services:
     # для отладки - если не запускается контейнер, запустить с таким entrypoint и войти в него
     # entrypoint: ['/bin/ash', '-c', 'while :; do echo here; sleep 60; done']
 
-  update-geo:
+  geo-update:
     build: ./geo-update
     restart: unless-stopped
     volumes:

@@ -131,8 +131,7 @@ class TestDownloadFile:
         mock_get.return_value = mock_response
         mock_get_file_size.return_value = 100
         
-        result = geo_update.download_file("https://example.com/file.dat", test_file)
-        assert result is True
+        geo_update.download_file("https://example.com/file.dat", test_file)
         assert test_file.exists()
         mock_get.assert_called_once_with("https://example.com/file.dat", allow_redirects=True, timeout=20, stream=True)
     
@@ -172,8 +171,7 @@ class TestCopyFileToContainer:
         mock_container.exec_run.return_value = Mock(exit_code=0)
         mock_container.put_archive.return_value = True
         
-        result = geo_update.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
-        assert result is True
+        geo_update.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
         mock_container.exec_run.assert_called_once_with("mkdir -p /app/bin", user="root")
         mock_container.put_archive.assert_called_once()
         mock_unlink.assert_called()
@@ -197,17 +195,13 @@ class TestRestartXray:
     def test_restart_xray_success(self, mock_log):
         """Test successful xray restart"""
         mock_container = Mock()
-        mock_pgrep_result = Mock()
-        mock_pgrep_result.exit_code = 0
-        mock_pgrep_result.output = b"12345"
         mock_kill_result = Mock()
         mock_kill_result.exit_code = 0
         
-        mock_container.exec_run.side_effect = [mock_pgrep_result, mock_kill_result]
+        mock_container.exec_run.side_effect = [mock_kill_result]
         
-        result = geo_update.restart_xray(mock_container)
-        assert result is True
-        assert mock_container.exec_run.call_count == 2
+        geo_update.restart_xray(mock_container)
+        assert mock_container.exec_run.call_count == 1
         mock_log.info.assert_called()
     
     def test_restart_xray_no_process(self):
@@ -219,21 +213,12 @@ class TestRestartXray:
         with pytest.raises(RuntimeError):
             geo_update.restart_xray(mock_container)
     
-    def test_restart_xray_empty_pid(self):
-        """Test when pgrep returns empty output"""
-        mock_container = Mock()
-        mock_pgrep_result = Mock()
-        mock_pgrep_result.exit_code = 0
-        mock_pgrep_result.output = b""
-        mock_container.exec_run.return_value = mock_pgrep_result
-        with pytest.raises(RuntimeError):
-            geo_update.restart_xray(mock_container)
-    
+
     def test_restart_xray_error(self):
         """Test error handling in restart"""
         mock_container = Mock()
-        mock_container.exec_run.side_effect = Exception("Docker error")
-        with pytest.raises(Exception):
+        mock_container.exec_run.side_effect = Exception("cannot execute kill command in container")
+        with pytest.raises(Exception, match="cannot execute kill command in container"):
             geo_update.restart_xray(mock_container)
 
 
@@ -296,7 +281,6 @@ class TestUpdateGeo:
                 filename = geo_file["filename"]
                 local_file = workdir / filename
                 local_file.write_bytes(b"dummy data")
-                print(local_file)
             
             mock_container = Mock()
             mock_docker_client = Mock()
@@ -364,30 +348,27 @@ class TestUpdateGeo:
 class TestMain:
     """Tests for main function"""
     
-    @patch('geo_update.stop_event')
+
+    @patch('time.sleep')
     @patch('geo_update.log')
     @patch('sys.argv', ['geo_update.py', '--delay', '5'])
-    def test_main_with_delay_flag(self, mock_log, mock_stop_event):
+    def test_main_with_delay_flag(self, mock_log, mock_sleep):
         """Test main function with '--delay' parameter"""
-        mock_stop_event.wait.return_value = True
+        geo_update.initial_delay()
 
-        geo_update.main()
-
-        mock_stop_event.wait.assert_called_once_with(5)
+        mock_sleep.assert_called_once_with(5)
         mock_log.info.assert_called()
 
-    @patch('geo_update.stop_event')
+    @patch('time.sleep')
     @patch('geo_update.random.randint', return_value=42)
     @patch('geo_update.log')
     @patch('sys.argv', ['geo_update.py', '--delay'])
-    def test_main_with_no_value_delay(self, mock_log, mock_randint, mock_stop_event):
+    def test_main_with_no_value_delay(self, mock_log, mock_randint, mock_sleep):
         """Test main function with '--delay' without a numeric value"""
-        mock_stop_event.wait.return_value = True
-
-        geo_update.main()
+        geo_update.initial_delay()
 
         mock_randint.assert_called_once_with(10, 60)
-        mock_stop_event.wait.assert_called_once_with(42)
+        mock_sleep.assert_called_once_with(42)
         mock_log.info.assert_called()
     
     @patch('geo_update.docker.from_env')
@@ -396,9 +377,5 @@ class TestMain:
     def test_main_docker_connection_error(self, mock_log, mock_docker_from_env):
         """Test main function when Docker connection fails"""
         mock_docker_from_env.side_effect = Exception("Docker connection error")
-        
-        with pytest.raises(SystemExit):
+        with pytest.raises(Exception, match="Docker connection error"):
             geo_update.main()
-
-        mock_log.error.assert_called()
-

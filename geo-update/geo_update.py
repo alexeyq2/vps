@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 import signal
 import threading
+from typing import Generator
 
 import docker
 import requests
@@ -55,11 +56,11 @@ logger.setLevel(numeric_level)
 
 log = logger
 docker_client = None
-stop_event = threading.Event()
 
-def _handle_termination(signum, frame):
-    log.debug(f"Received signal {signum}, shutting down")
-    stop_event.set()
+def iter_geo_files() -> Generator[str, str, int]:
+    """Generator yielding (url, filename) tuples from GEO_FILES."""
+    for geo_file in GEO_FILES:
+        yield geo_file["url"], geo_file["filename"]
 
 
 def get_url_size(url):
@@ -90,7 +91,6 @@ def need_download(url, local_file):
     if latest_size != existing_size:
         log.info(f"{local_file.name} size has changed, '{latest_size}' != '{existing_size}'")
         return True
-
     return False
 
 
@@ -108,7 +108,6 @@ def download_file(url, filepath):
         raise RuntimeError(f"Downloaded file {filepath.name} is empty")
 
     log.debug(f"Downloaded {filepath.name} ({get_file_size(filepath)} bytes)")
-    return True
 
 
 def copy_file_to_container(container, local_file, remote_path):
@@ -118,8 +117,6 @@ def copy_file_to_container(container, local_file, remote_path):
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as tar_file:
             tar_path = tar_file.name
-
-            # Ensure target directory exists
             container.exec_run(f"mkdir -p {target_dir}", user="root")
 
             # Create tar archive
@@ -130,9 +127,8 @@ def copy_file_to_container(container, local_file, remote_path):
         with open(tar_path, 'rb') as f:
             result = container.put_archive(target_dir, f)
             if not result:
-                raise RuntimeError(f"Failed to put archive into container for {local_file.name}")
-            log.info(f"Copied {local_file.name} to {remote_path} in container")
-        return True
+                raise RuntimeError(f"Failed to copy to container: {local_file.name}")
+            log.debug(f"Copied {local_file.name} to {remote_path} in container")
     finally:
         try:
             if tar_path:
@@ -143,87 +139,54 @@ def copy_file_to_container(container, local_file, remote_path):
 
 def restart_xray(container):
     """Restart xray process by sending SIGTERM"""
-    exec_result = container.exec_run(
-        f"pgrep {PROCESS_NAME}",
-        user="root"
-    )
-
-    if exec_result.exit_code != 0:
-        raise RuntimeError(f"No {PROCESS_NAME} process found in container")
-
-    pid = exec_result.output.decode().strip()
-    if not pid:
-        raise RuntimeError(f"No {PROCESS_NAME} process found in container")
-
-    log.info(f"Restarting xray pid={pid}")
-
-    exec_result = container.exec_run(
-        f"kill {pid}",
-        user="root"
-    )
-
-    if exec_result.exit_code == 0:
-        log.debug(f"Sent SIGTERM to xray process {pid}")
-        return True
+    
+    r = container.exec_run(f"sh -c 'kill $(pgrep {PROCESS_NAME})'", user="root")
+    if not r.exit_code == 0:
+        raise RuntimeError(f"Error sending restart signal to {PROCESS_NAME}: {r.output.decode()}")
     else:
-        raise RuntimeError(f"Error sending signal to xray: {exec_result.output.decode()}")
+        log.info(f"Signaled {PROCESS_NAME} to restart")
 
 def get_container_file_size(container, path):
     """Return file size in bytes for a path inside container, or 0 if missing."""
     cmd = f"stat -c %s {path}"
-    exec_result = container.exec_run(cmd, user="root")
-    if exec_result.exit_code != 0:
+    r = container.exec_run(cmd, user="root")
+    if r.exit_code != 0:
         return 0
-    out = exec_result.output.decode().strip()
+    out = r.output.decode().strip()
     return int(out)
 
-def print_exists(path):
-    print('WWWW', path, os.path.exists(path))
 
 def geo_update():
     """Main update function: find container by name, download and copy files."""
 
-    n_downloads = 0
-    updated_files = []
-
-    for geo_file in GEO_FILES:
-        url = geo_file["url"]
-        filename = geo_file["filename"]
+    for url, filename in iter_geo_files():
         local_file = WORKDIR / filename
-
         if need_download(url, local_file):
             download_file(url, local_file)
-            n_downloads += 1
-            updated_files.append((local_file, filename))
         else:
-            log.info(f"{filename} is up-to-date")
+            log.info(f"{filename} is up-to-date ({local_file})")
 
     copied_any = False
     container = get_container(XRAY_CONTAINER_NAME)
 
-    for geo_file in GEO_FILES:
-        filename = geo_file["filename"]
-        url = geo_file["url"]
+    # Always check all files to handle the case when some files were downloaded but 
+    # not copied for some reason (e.g. xray container was stopped)
+    for url, filename in iter_geo_files():
         local_file = WORKDIR / filename
-        remote_path = f"{APPDIR}/{filename}"
-
         local_size = get_file_size(local_file)
-        remote_size = get_container_file_size(container, remote_path)
-        if local_size != remote_size:
-            log.info(f"Copying {filename} to container: local={local_size} remote={remote_size}")
-            copy_file_to_container(container, local_file, remote_path)
+        
+        container_file = f"{APPDIR}/{filename}"
+        container_size = get_container_file_size(container, container_file)
+        
+        if local_size != container_size:
+            log.info(f"Copy {filename} to container. sizes: local={local_size} container={container_size}")
+            copy_file_to_container(container, local_file, container_file)
             copied_any = True
         else:
             log.debug(f"{filename} in container is up-to-date (size {local_size})")
 
     if copied_any:
-        try:
-            restart_xray(container)
-        except Exception as e:
-            log.error(f"Failed to restart xray after copying files: {e}")
-        return True
-
-    if n_downloads > 0:
+        restart_xray(container)
         return True
 
     return False
@@ -247,56 +210,50 @@ def get_update_delay():
     return total
 
 
-def main():
-    """Main loop"""
-    log.info("START")
-    signal.signal(signal.SIGTERM, _handle_termination)
-    signal.signal(signal.SIGINT, _handle_termination)
-    
+def initial_delay():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--delay", nargs='?', type=int, const=-1,
                         help="sleep before first run; provide a number in seconds or omit to sleep a random 10-60s")
     args, _ = parser.parse_known_args()
 
     if args.delay is None:
-        log.info("Running immediately (default)")
+        log.info("Begin geofiles update")
     else:
         if args.delay == -1:
             delay = random.randint(10, 60)
         else:
             delay = max(0, args.delay)
 
-        log.info(f"Begin geofiles update in {delay} seconds (delay requested)")
-        if stop_event.wait(delay):
-            log.info("Shutdown requested during initial delay")
-            return
-
+        log.info(f"Begin geofiles update in {delay} seconds")
+        time.sleep(delay)
+    
+def main():
+    """Main loop"""
+    log.info("START")
+    signal.signal(signal.SIGTERM, _handle_termination)
+    signal.signal(signal.SIGINT, _handle_termination)
     WORKDIR.mkdir(parents=True, exist_ok=True)
 
-    try:
-        global docker_client
-        docker_client = docker.from_env()
-    except Exception as e:
-        log.error(f"Error connecting to Docker: {e}")
-        sys.exit(1)
-    
+    global docker_client
+    docker_client = docker.from_env()
+
+    initial_delay()
+
     while True:
         start_time = time.time()
         try:
-            result = geo_update()
+            geo_update()
             elapsed = int(time.time() - start_time)
             log.info(f"Geofiles update OK in {elapsed} sec")
         except Exception as e:
             log.exception("Error during update", exc_info=e)
         
         update_interval = get_update_delay()
-        log.debug(f"Next update in {update_interval // 3600} hours (+ jitter)")
-        if stop_event.wait(update_interval):
-            log.info("Shutdown requested during update interval")
-            break
+        log.info(f"Next update in {update_interval // 3600} hours")
+        time.sleep(update_interval)
 
-    log.info("STOP")
-
+def _handle_termination(signum, frame):
+  os._exit(2)
 
 if __name__ == "__main__":
     main()
