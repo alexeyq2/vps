@@ -9,6 +9,8 @@ import tarfile
 import tempfile
 from datetime import datetime
 from pathlib import Path
+import signal
+import threading
 
 import docker
 import requests
@@ -49,6 +51,14 @@ GEO_FILES = [
 def log(message):
     """Log message with timestamp to stdout"""
     print(f"[{datetime.now()}] {message}", flush=True)
+
+# shutdown event set by signal handler
+stop_event = threading.Event()
+
+
+def _handle_termination(signum, frame):
+    log(f"Received signal {signum}, shutting down")
+    stop_event.set()
 
 
 def get_url_size(url):
@@ -253,6 +263,8 @@ def get_update_delay():
 def main():
     """Main loop"""
     log("START")
+    signal.signal(signal.SIGTERM, _handle_termination)
+    signal.signal(signal.SIGINT, _handle_termination)
     
     # Default: run immediately. Use --delay to sleep before first run.
     parser = argparse.ArgumentParser(add_help=False)
@@ -269,7 +281,9 @@ def main():
             delay = max(0, args.delay)
 
         log(f"Begin geofiles update in {delay} seconds (delay requested)")
-        time.sleep(delay)
+        if stop_event.wait(delay):
+            log("Shutdown requested during initial delay")
+            return
     
     # Connect to Docker
     try:
@@ -287,7 +301,9 @@ def main():
         container = get_container(docker_client, CONTAINER_NAME)
         if container is None:
             log(f"Container '{CONTAINER_NAME}' not available, waiting...")
-            time.sleep(60)  # Wait 1 minute before retrying
+            if stop_event.wait(60):
+                log("Shutdown requested while waiting for container")
+                break
             continue
         
         # Update geo files
@@ -301,7 +317,11 @@ def main():
         # Wait for next update (UPDATE_INTERVAL hours + jitter)
         update_interval = get_update_delay()
         log(f"Next update in {update_interval // 3600} hours (+ jitter)")
-        time.sleep(update_interval)
+        if stop_event.wait(update_interval):
+            log("Shutdown requested during update interval")
+            break
+
+    log("STOP")
 
 
 if __name__ == "__main__":
