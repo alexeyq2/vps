@@ -65,16 +65,12 @@ def _handle_termination(signum, frame):
 
 def get_url_size(url):
     """Get file size from URL using HTTP HEAD request"""
-    try:
-        response = requests.head(url, allow_redirects=True, timeout=30)
-        response.raise_for_status()
-        content_length = response.headers.get('Content-Length')
-        if content_length:
-            return int(content_length)
-        return None
-    except Exception as e:
-        log.error(f"Error getting size for {url}: {e}")
-        return None
+    response = requests.head(url, allow_redirects=True, timeout=30)
+    response.raise_for_status()
+    content_length = response.headers.get('Content-Length')
+    if content_length:
+        return int(content_length)
+    return None
 
 
 def get_file_size(filepath):
@@ -106,94 +102,82 @@ def need_download(url, local_file):
 
 def download_file(url, filepath):
     """Download file from URL"""
-    try:
-        log.info(f"Downloading {filepath.name} from {url}")
-        response = requests.get(url, allow_redirects=True, timeout=20, stream=True)
-        response.raise_for_status()
-        
-        with open(filepath, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        
-        if get_file_size(filepath) == 0:
-            log.error(f"Error: Downloaded file {filepath.name} is empty")
-            return False
-        log.debug(f"Downloaded {filepath.name} ({get_file_size(filepath)} bytes)")
-        return True
-    except Exception as e:
-        log.error(f"Error downloading {url}: {e}")
-        return False
+    log.info(f"Downloading {filepath.name} from {url}")
+    response = requests.get(url, allow_redirects=True, timeout=20, stream=True)
+    response.raise_for_status()
+
+    with open(filepath, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+    if get_file_size(filepath) == 0:
+        raise RuntimeError(f"Downloaded file {filepath.name} is empty")
+
+    log.debug(f"Downloaded {filepath.name} ({get_file_size(filepath)} bytes)")
+    return True
 
 
 def copy_file_to_container(container, local_file, remote_path):
     """Copy file to container using Docker API"""
     target_dir = os.path.dirname(remote_path)
     tar_path = None
-    
     # Create a tar archive in a temporary file (file-based stream to minimize memory usage)
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as tar_file:
-        try:
+    tar_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as tar_file:
             tar_path = tar_file.name
-            
+
             # Ensure target directory exists
             container.exec_run(f"mkdir -p {target_dir}", user="root")
-            
+
             # Create tar archive
-            tar = tarfile.open(name=tar_path, mode='w')
-            tar.add(local_file, arcname=os.path.basename(remote_path))
-            tar.close()
-            
-            # Read the tar file and put archive into container
-            with open(tar_path, 'rb') as f:
-                container.put_archive(target_dir, f)            
-                log.info(f"Copied {local_file.name} to {remote_path} in container")
-            return True
-        except Exception as e:
-            log.error(f"Error copying {local_file.name} to container: {e}")
-            return False
-        finally:
-            # Clean up temporary tar file
-            try:
+            with tarfile.open(name=tar_path, mode='w') as tar:
+                tar.add(local_file, arcname=os.path.basename(remote_path))
+
+        # Read the tar file and put archive into container
+        with open(tar_path, 'rb') as f:
+            container.put_archive(target_dir, f)
+            log.info(f"Copied {local_file.name} to {remote_path} in container")
+        return True
+    finally:
+        # Clean up temporary tar file
+        try:
+            if tar_path:
                 os.unlink(tar_path)
-            except Exception:
-                pass
+        except Exception:
+            pass
 
 
 def restart_xray(container):
     """Restart xray process by sending SIGTERM"""
-    try:
-        # Find xray-linux process in container
-        exec_result = container.exec_run(
-            f"pgrep {PROCESS_NAME}",
-            user="root"
-        )
-        
-        if exec_result.exit_code != 0:
-            log.warning(f"No {PROCESS_NAME} process found, skip restart")
-            return False
-        
-        pid = exec_result.output.decode().strip()
-        if not pid:
-            log.warning(f"No {PROCESS_NAME} process found, skip restart")
-            return False
-        
-        log.info(f"Restarting xray pid={pid}")
-        
-        # Send SIGTERM to xray process
-        exec_result = container.exec_run(
-            f"kill {pid}",
-            user="root"
-        )
-        
-        if exec_result.exit_code == 0:
-            log.debug(f"Sent SIGTERM to xray process {pid}")
-            return True
-        else:
-            log.error(f"Error sending signal to xray: {exec_result.output.decode()}")
-            return False
-            
-    except Exception as e:
-        log.error(f"Error restarting xray: {e}")
+    # Find xray-linux process in container
+    exec_result = container.exec_run(
+        f"pgrep {PROCESS_NAME}",
+        user="root"
+    )
+
+    if exec_result.exit_code != 0:
+        log.warning(f"No {PROCESS_NAME} process found, skip restart")
+        return False
+
+    pid = exec_result.output.decode().strip()
+    if not pid:
+        log.warning(f"No {PROCESS_NAME} process found, skip restart")
+        return False
+
+    log.info(f"Restarting xray pid={pid}")
+
+    # Send SIGTERM to xray process
+    exec_result = container.exec_run(
+        f"kill {pid}",
+        user="root"
+    )
+
+    if exec_result.exit_code == 0:
+        log.debug(f"Sent SIGTERM to xray process {pid}")
+        return True
+    else:
+        log.error(f"Error sending signal to xray: {exec_result.output.decode()}")
         return False
 
 
@@ -240,16 +224,12 @@ def update_geo():
 
 def get_container(container_name):
     """Get container by name using module-level `docker_client`"""
-    try:
-        assert docker_client is not None
-        containers = docker_client.containers.list(filters={"name": container_name})
-        if containers:
-            return containers[0]
-        log.debug(f"Container '{container_name}' not found")
-        return None
-    except Exception as e:
-        log.error(f"Error finding container '{container_name}': {e}")
-        return None
+    assert docker_client is not None
+    containers = docker_client.containers.list(filters={"name": container_name})
+    if containers:
+        return containers[0]
+    log.debug(f"Container '{container_name}' not found")
+    return None
 
 
 def get_update_delay():
@@ -305,7 +285,7 @@ def main():
             elapsed = int(time.time() - start_time)
             log.info(f"Geofiles update OK in {elapsed} sec")
         except Exception as e:
-            log.error(f"Error during update: {e}")
+            log.exception("Error during update", exc_info=e)
         
         # Wait for next update (UPDATE_INTERVAL hours + jitter)
         update_interval = get_update_delay()
