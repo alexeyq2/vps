@@ -42,10 +42,10 @@ class TestGetUrlSize:
     def test_get_url_size_error(self, mock_log, mock_head):
         """Test error handling"""
         mock_head.side_effect = Exception("Connection error")
-        
+
         size = main.get_url_size("https://example.com/file.dat")
         assert size is None
-        mock_log.assert_called()
+        mock_log.error.assert_called()
 
 
 class TestGetFileSize:
@@ -80,7 +80,7 @@ class TestNeedDownload:
         
         result = main.need_download("https://example.com/file.dat", local_file)
         assert result is True
-        mock_log.assert_called()
+        mock_log.debug.assert_called()
     
     @patch('main.get_url_size')
     @patch('main.get_file_size')
@@ -94,7 +94,7 @@ class TestNeedDownload:
         
         result = main.need_download("https://example.com/file.dat", local_file)
         assert result is True
-        mock_log.assert_called()
+        mock_log.debug.assert_called()
     
     @patch('main.get_url_size')
     @patch('main.get_file_size')
@@ -120,7 +120,7 @@ class TestNeedDownload:
         
         result = main.need_download("https://example.com/file.dat", local_file)
         assert result is False
-        mock_log.assert_called()
+        mock_log.debug.assert_called()
 
 
 class TestDownloadFile:
@@ -157,7 +157,7 @@ class TestDownloadFile:
         
         result = main.download_file("https://example.com/file.dat", test_file)
         assert result is False
-        mock_log.assert_called()
+        mock_log.error.assert_called()
     
     @patch('main.requests.get')
     @patch('main.log')
@@ -168,7 +168,7 @@ class TestDownloadFile:
         
         result = main.download_file("https://example.com/file.dat", test_file)
         assert result is False
-        mock_log.assert_called()
+        mock_log.error.assert_called()
 
 
 class TestCopyFileToContainer:
@@ -203,7 +203,7 @@ class TestCopyFileToContainer:
         
         result = main.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
         assert result is False
-        mock_log.assert_called()
+        mock_log.error.assert_called()
 
 
 class TestRestartXray:
@@ -224,7 +224,7 @@ class TestRestartXray:
         result = main.restart_xray(mock_container)
         assert result is True
         assert mock_container.exec_run.call_count == 2
-        mock_log.assert_called()
+        mock_log.info.assert_called()
     
     @patch('main.log')
     def test_restart_xray_no_process(self, mock_log):
@@ -236,7 +236,7 @@ class TestRestartXray:
         
         result = main.restart_xray(mock_container)
         assert result is False
-        mock_log.assert_called()
+        mock_log.debug.assert_called()
     
     @patch('main.log')
     def test_restart_xray_empty_pid(self, mock_log):
@@ -249,7 +249,7 @@ class TestRestartXray:
         
         result = main.restart_xray(mock_container)
         assert result is False
-        mock_log.assert_called()
+        mock_log.debug.assert_called()
     
     @patch('main.log')
     def test_restart_xray_error(self, mock_log):
@@ -259,7 +259,7 @@ class TestRestartXray:
         
         result = main.restart_xray(mock_container)
         assert result is False
-        mock_log.assert_called()
+        mock_log.error.assert_called()
 
 
 class TestGetContainer:
@@ -287,7 +287,7 @@ class TestGetContainer:
 
         result = main.get_container("3x-ui")
         assert result is None
-        mock_log.assert_called()
+        mock_log.debug.assert_called()
     
     @patch('main.log')
     def test_get_container_error(self, mock_log):
@@ -298,7 +298,7 @@ class TestGetContainer:
 
         result = main.get_container("3x-ui")
         assert result is None
-        mock_log.assert_called()
+        mock_log.error.assert_called()
 
 
 class TestUpdateGeo:
@@ -401,7 +401,7 @@ class TestMain:
         main.main()
 
         mock_stop_event.wait.assert_called_once_with(5)
-        mock_log.assert_called()
+        mock_log.info.assert_called()
 
     @patch('main.stop_event')
     @patch('main.random.randint', return_value=42)
@@ -417,7 +417,7 @@ class TestMain:
 
         mock_randint.assert_called_once_with(10, 60)
         mock_stop_event.wait.assert_called_once_with(42)
-        mock_log.assert_called()
+        mock_log.info.assert_called()
     
     @patch('main.docker.from_env')
     @patch('main.log')
@@ -428,6 +428,6 @@ class TestMain:
         
         with pytest.raises(SystemExit):
             main.main()
-        
-        mock_log.assert_called()
+
+        mock_log.error.assert_called()
 
