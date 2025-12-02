@@ -15,7 +15,6 @@ import threading
 import docker
 import requests
 
-
 # Configuration
 WORKDIR = Path("/app/geo")  # Persistent volume mounted from host
 APPDIR = "/app/bin"  # Target directory in 3x-ui container
@@ -47,6 +46,7 @@ GEO_FILES = [
     }
 ]
 
+docker_client = None
 
 def log(message):
     """Log message with timestamp to stdout"""
@@ -197,11 +197,11 @@ def restart_xray(container):
         return False
 
 
-def update_geo(docker_client):
+def update_geo():
     """Main update function: find container by name, download and copy files."""
     WORKDIR.mkdir(parents=True, exist_ok=True)
 
-    container = get_container(docker_client, XRAY_CONTAINER_NAME)
+    container = get_container(XRAY_CONTAINER_NAME)
     if container is None:
         log(f"Container '{XRAY_CONTAINER_NAME}' not available")
         return None
@@ -238,9 +238,10 @@ def update_geo(docker_client):
     return False
 
 
-def get_container(docker_client, container_name):
-    """Get container by name"""
+def get_container(container_name):
+    """Get container by name using module-level `docker_client`"""
     try:
+        assert docker_client is not None
         containers = docker_client.containers.list(filters={"name": container_name})
         if containers:
             return containers[0]
@@ -286,6 +287,7 @@ def main():
     
     # Connect to Docker
     try:
+        global docker_client
         docker_client = docker.from_env()
     except Exception as e:
         log(f"Error connecting to Docker: {e}")
@@ -296,18 +298,10 @@ def main():
     while True:
         start_time = time.time()
         
-        # Get 3x-ui container
-        container = get_container(docker_client, XRAY_CONTAINER_NAME)
-        if container is None:
-            log(f"Container '{XRAY_CONTAINER_NAME}' not available, waiting...")
-            if stop_event.wait(60):
-                log("Shutdown requested while waiting for container")
-                break
-            continue
-        
         # Update geo files
         try:
-            update_geo(docker_client, container)
+            # update_geo will use the module-level docker_client
+            result = update_geo()
             elapsed = int(time.time() - start_time)
             log(f"Geofiles update OK in {elapsed} sec")
         except Exception as e:

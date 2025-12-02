@@ -271,8 +271,10 @@ class TestGetContainer:
         mock_client = Mock()
         mock_container = Mock()
         mock_client.containers.list.return_value = [mock_container]
-        
-        result = main.get_container(mock_client, "3x-ui")
+        # set module-level docker_client
+        main.docker_client = mock_client
+
+        result = main.get_container("3x-ui")
         assert result == mock_container
         mock_client.containers.list.assert_called_once_with(filters={"name": "3x-ui"})
     
@@ -281,8 +283,9 @@ class TestGetContainer:
         """Test when container is not found"""
         mock_client = Mock()
         mock_client.containers.list.return_value = []
-        
-        result = main.get_container(mock_client, "3x-ui")
+        main.docker_client = mock_client
+
+        result = main.get_container("3x-ui")
         assert result is None
         mock_log.assert_called()
     
@@ -291,8 +294,9 @@ class TestGetContainer:
         """Test error handling"""
         mock_client = Mock()
         mock_client.containers.list.side_effect = Exception("Docker error")
-        
-        result = main.get_container(mock_client, "3x-ui")
+        main.docker_client = mock_client
+
+        result = main.get_container("3x-ui")
         assert result is None
         mock_log.assert_called()
 
@@ -325,7 +329,9 @@ class TestUpdateGeo:
             # Ensure get_container finds the mocked container
             mock_docker_client.containers.list.return_value = [mock_container]
 
-            result = main.update_geo(mock_docker_client)
+            # set module-level docker_client and call update_geo()
+            main.docker_client = mock_docker_client
+            result = main.update_geo()
             assert result is True
             # Should attempt to download all 4 geo files
             assert mock_download_file.call_count == len(main.GEO_FILES)
@@ -350,7 +356,8 @@ class TestUpdateGeo:
             # Ensure get_container finds the mocked container
             mock_docker_client.containers.list.return_value = [mock_container]
 
-            result = main.update_geo(mock_docker_client)
+            main.docker_client = mock_docker_client
+            result = main.update_geo()
             assert result is False
     
     @patch('main.copy_file_to_container')
@@ -374,7 +381,8 @@ class TestUpdateGeo:
             # Ensure get_container finds the mocked container
             mock_docker_client.containers.list.return_value = [mock_container]
 
-            result = main.update_geo(mock_docker_client)
+            main.docker_client = mock_docker_client
+            result = main.update_geo()
             assert result is False
 
 
