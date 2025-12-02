@@ -321,8 +321,11 @@ class TestUpdateGeo:
             
             mock_container = Mock()
             mock_docker_client = Mock()
-            
-            result = main.update_geo(mock_docker_client, mock_container)
+
+            # Ensure get_container finds the mocked container
+            mock_docker_client.containers.list.return_value = [mock_container]
+
+            result = main.update_geo(mock_docker_client)
             assert result is True
             # Should attempt to download all 4 geo files
             assert mock_download_file.call_count == len(main.GEO_FILES)
@@ -343,8 +346,11 @@ class TestUpdateGeo:
             
             mock_container = Mock()
             mock_docker_client = Mock()
-            
-            result = main.update_geo(mock_docker_client, mock_container)
+
+            # Ensure get_container finds the mocked container
+            mock_docker_client.containers.list.return_value = [mock_container]
+
+            result = main.update_geo(mock_docker_client)
             assert result is False
     
     @patch('main.copy_file_to_container')
@@ -364,34 +370,46 @@ class TestUpdateGeo:
             
             mock_container = Mock()
             mock_docker_client = Mock()
-            
-            result = main.update_geo(mock_docker_client, mock_container)
+
+            # Ensure get_container finds the mocked container
+            mock_docker_client.containers.list.return_value = [mock_container]
+
+            result = main.update_geo(mock_docker_client)
             assert result is False
 
 
 class TestMain:
     """Tests for main function"""
     
-    @patch('main.update_geo')
-    @patch('main.get_container')
-    @patch('main.docker.from_env')
+    @patch('main.stop_event')
     @patch('main.log')
-    @patch('sys.argv', ['main.py', 'now'])
-    def test_main_with_now_flag(self, mock_log, mock_docker_from_env, mock_get_container,
-                                 mock_update_geo):
-        """Test main function with 'now' flag"""
-        mock_docker_client = Mock()
-        mock_docker_from_env.return_value = mock_docker_client
-        mock_container = Mock()
-        mock_get_container.return_value = mock_container
-        
-        # Mock the infinite loop to exit after first iteration
-        with patch('main.time.sleep', side_effect=[KeyboardInterrupt()]):
-            with pytest.raises(KeyboardInterrupt):
-                main.main()
-        
+    @patch('sys.argv', ['main.py', '--delay', '5'])
+    def test_main_with_delay_flag(self, mock_log, mock_stop_event):
+        """Test main function with '--delay' parameter"""
+        # Simulate shutdown requested during initial delay
+        mock_stop_event.wait.return_value = True
+
+        # Run main; it should return early because stop_event.wait returned True
+        main.main()
+
+        mock_stop_event.wait.assert_called_once_with(5)
         mock_log.assert_called()
-        mock_get_container.assert_called()
+
+    @patch('main.stop_event')
+    @patch('main.random.randint', return_value=42)
+    @patch('main.log')
+    @patch('sys.argv', ['main.py', '--delay'])
+    def test_main_with_no_value_delay(self, mock_log, mock_randint, mock_stop_event):
+        """Test main function with '--delay' without a numeric value"""
+        # Simulate shutdown requested during initial delay
+        mock_stop_event.wait.return_value = True
+
+        # Run main; it should compute delay using random.randint and return early
+        main.main()
+
+        mock_randint.assert_called_once_with(10, 60)
+        mock_stop_event.wait.assert_called_once_with(42)
+        mock_log.assert_called()
     
     @patch('main.docker.from_env')
     @patch('main.log')

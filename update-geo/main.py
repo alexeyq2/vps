@@ -19,7 +19,7 @@ import requests
 # Configuration
 WORKDIR = Path("/app/geo")  # Persistent volume mounted from host
 APPDIR = "/app/bin"  # Target directory in 3x-ui container
-CONTAINER_NAME = "3x-ui"  # Docker compose service name
+XRAY_CONTAINER_NAME = "3x-ui"  # Docker compose service name
 PROCESS_NAME = "xray-linux"  # Xray process name to signal
 
 # Update scheduling
@@ -197,19 +197,23 @@ def restart_xray(container):
         return False
 
 
-def update_geo(docker_client, container):
-    """Main update function"""
+def update_geo(docker_client):
+    """Main update function: find container by name, download and copy files."""
     WORKDIR.mkdir(parents=True, exist_ok=True)
-    
+
+    container = get_container(docker_client, XRAY_CONTAINER_NAME)
+    if container is None:
+        log(f"Container '{XRAY_CONTAINER_NAME}' not available")
+        return None
+
     n_downloads = 0
     updated_files = []
-    
-    # Download files that need updating
+
     for geo_file in GEO_FILES:
         url = geo_file["url"]
         filename = geo_file["filename"]
         local_file = WORKDIR / filename
-        
+
         if need_download(url, local_file):
             if download_file(url, local_file):
                 n_downloads += 1
@@ -218,24 +222,19 @@ def update_geo(docker_client, container):
                 log(f"Failed to download {filename}")
         else:
             log(f"{filename} is up-to-date")
-    
-    # Copy updated files to container and restart xray if needed
+
     if n_downloads > 0:
         log(f"Geofiles are different, updating {n_downloads} file(s)")
-        
-        # Copy all updated files to container
+
         for local_file, filename in updated_files:
             remote_path = f"{APPDIR}/{filename}"
             if not copy_file_to_container(container, local_file, remote_path):
                 log(f"Failed to copy {filename} to container")
                 return False
-        
-        # Restart xray to pick up new geo files
-        # Note: Xray-core does not automatically reload geo files,
-        # so we need to restart the process
+
         restart_xray(container)
         return True
-    
+
     return False
 
 
@@ -298,9 +297,9 @@ def main():
         start_time = time.time()
         
         # Get 3x-ui container
-        container = get_container(docker_client, CONTAINER_NAME)
+        container = get_container(docker_client, XRAY_CONTAINER_NAME)
         if container is None:
-            log(f"Container '{CONTAINER_NAME}' not available, waiting...")
+            log(f"Container '{XRAY_CONTAINER_NAME}' not available, waiting...")
             if stop_event.wait(60):
                 log("Shutdown requested while waiting for container")
                 break
