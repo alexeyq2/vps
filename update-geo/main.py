@@ -20,6 +20,11 @@ APPDIR = "/app/bin"  # Target directory in 3x-ui container
 CONTAINER_NAME = "3x-ui"  # Docker compose service name
 PROCESS_NAME = "xray-linux"  # Xray process name to signal
 
+# Update scheduling
+UPDATE_INTERVAL_HOURS = 18  # base interval in hours
+UPDATE_INTERVAL = UPDATE_INTERVAL_HOURS * 60 * 60  # seconds
+MAX_JITTER_SECONDS = 5 * 60  # add up to 5 minutes random jitter
+
 # Geo file URLs and target filenames
 GEO_FILES = [
     {
@@ -237,6 +242,14 @@ def get_container(docker_client, container_name):
         return None
 
 
+def get_update_delay():
+    """Return update delay in seconds: base UPDATE_INTERVAL plus random jitter up to MAX_JITTER_SECONDS."""
+    jitter = random.randint(0, MAX_JITTER_SECONDS)
+    total = UPDATE_INTERVAL + jitter
+    log(f"Computed next update delay: base={UPDATE_INTERVAL}s + jitter={jitter}s => {total}s")
+    return total
+
+
 def main():
     """Main loop"""
     log("START")
@@ -245,17 +258,14 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--delay", nargs='?', type=int, const=-1,
                         help="sleep before first run; provide a number in seconds or omit to sleep a random 10-60s")
-    # parse known args only so other positional args are preserved if used elsewhere
     args, _ = parser.parse_known_args()
 
     if args.delay is None:
         log("Running immediately (default)")
     else:
-        # If user provided --delay without value (const == -1), pick random 10-60
         if args.delay == -1:
             delay = random.randint(10, 60)
         else:
-            # use provided numeric value, but clamp to sensible range (>=0)
             delay = max(0, args.delay)
 
         log(f"Begin geofiles update in {delay} seconds (delay requested)")
@@ -268,9 +278,7 @@ def main():
         log(f"Error connecting to Docker: {e}")
         sys.exit(1)
     
-    # Main update loop - run every 6 hours
-    seconds_in_hour = 60 * 60
-    update_interval = 6 * seconds_in_hour
+    # Main update loop - run every UPDATE_INTERVAL (default 18 hours) plus small random jitter
     
     while True:
         start_time = time.time()
@@ -290,8 +298,9 @@ def main():
         except Exception as e:
             log(f"Error during update: {e}")
         
-        # Wait for next update (6 hours)
-        log(f"Next update in {update_interval // 3600} hours")
+        # Wait for next update (UPDATE_INTERVAL hours + jitter)
+        update_interval = get_update_delay()
+        log(f"Next update in {update_interval // 3600} hours (+ jitter)")
         time.sleep(update_interval)
 
 
