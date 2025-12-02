@@ -260,9 +260,8 @@ class TestGetContainer:
         mock_client.containers.list.return_value = []
         main.docker_client = mock_client
 
-        result = main.get_container("3x-ui")
-        assert result is None
-        mock_log.debug.assert_called()
+        with pytest.raises(RuntimeError):
+            main.get_container("3x-ui")
     
     def test_get_container_error(self):
         """Test error handling"""
@@ -351,8 +350,8 @@ class TestUpdateGeo:
             mock_docker_client.containers.list.return_value = [mock_container]
 
             main.docker_client = mock_docker_client
-            result = main.update_geo()
-            assert result is False
+            with pytest.raises(Exception):
+                main.update_geo()
 
 
 class TestMain:

@@ -177,53 +177,46 @@ def restart_xray(container):
 
 def update_geo():
     """Main update function: find container by name, download and copy files."""
-    WORKDIR.mkdir(parents=True, exist_ok=True)
 
-    try:
-        n_downloads = 0
-        updated_files = []
+    n_downloads = 0
+    updated_files = []
 
-        for geo_file in GEO_FILES:
-            url = geo_file["url"]
-            filename = geo_file["filename"]
-            local_file = WORKDIR / filename
+    for geo_file in GEO_FILES:
+        url = geo_file["url"]
+        filename = geo_file["filename"]
+        local_file = WORKDIR / filename
 
-            if need_download(url, local_file):
-                download_file(url, local_file)
-                n_downloads += 1
-                updated_files.append((local_file, filename))
-            else:
-                log.info(f"{filename} is up-to-date")
+        if need_download(url, local_file):
+            download_file(url, local_file)
+            n_downloads += 1
+            updated_files.append((local_file, filename))
+        else:
+            log.info(f"{filename} is up-to-date")
 
-        if n_downloads > 0:
-            log.info(f"Geofiles are different, updating {n_downloads} file(s)")
+    if n_downloads > 0:
+        log.info(f"Geofiles are different, updating {n_downloads} file(s)")
 
-            container = get_container(XRAY_CONTAINER_NAME)
-            if container is None:
-                log.error(f"Container '{XRAY_CONTAINER_NAME}' not available")
-                return False
+        container = get_container(XRAY_CONTAINER_NAME)
+        for local_file, filename in updated_files:
+            remote_path = f"{APPDIR}/{filename}"
+            copy_file_to_container(container, local_file, remote_path)
 
-            for local_file, filename in updated_files:
-                remote_path = f"{APPDIR}/{filename}"
-                copy_file_to_container(container, local_file, remote_path)
+        restart_xray(container)
+        return True
 
-            restart_xray(container)
-            return True
+    return False
 
-        return False
-    except Exception:
-        log.exception("Error updating geofiles")
-        return False
 
 
 def get_container(container_name):
     """Get container by name using module-level `docker_client`"""
     assert docker_client is not None
     containers = docker_client.containers.list(filters={"name": container_name})
-    if containers:
-        return containers[0]
-    log.debug(f"Container '{container_name}' not found")
-    return None
+    if not containers:
+        # No matching container found — signal this as an error
+        raise RuntimeError(f"Container '{container_name}' not found")
+
+    return containers[0]
 
 
 def get_update_delay():
@@ -258,7 +251,9 @@ def main():
         if stop_event.wait(delay):
             log.info("Shutdown requested during initial delay")
             return
-    
+
+    WORKDIR.mkdir(parents=True, exist_ok=True)
+
     # Connect to Docker
     try:
         global docker_client
