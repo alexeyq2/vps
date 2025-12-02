@@ -1,8 +1,149 @@
-_work
-srv
+# Project specific
+_work/
+srv/
 .env
 *.deleted
 bbr.sh
 *.log
 
+# Python - Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
+# Python - C extensions
+*.so
+
+# Python - Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Python - PyInstaller
+*.manifest
+*.spec
+
+# Python - Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Python - Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Python - Translations
+*.mo
+*.pot
+
+# Python - Django stuff
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Python - Flask stuff
+instance/
+.webassets-cache
+
+# Python - Scrapy stuff
+.scrapy
+
+# Python - Sphinx documentation
+docs/_build/
+
+# Python - PyBuilder
+.pybuilder/
+target/
+
+# Python - Jupyter Notebook
+.ipynb_checkpoints
+
+# Python - IPython
+profile_default/
+ipython_config.py
+
+# Python - pyenv
+.python-version
+
+# Python - pipenv
+Pipfile.lock
+
+# Python - poetry
+poetry.lock
+
+# Python - pdm
+.pdm.toml
+
+# Python - PEP 582
+__pypackages__/
+
+# Python - Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# Python - SageMath parsed files
+*.sage.py
+
+# Python - Environments
+.venv
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python - Spyder project settings
+.spyderproject
+.spyproject
+
+# Python - Rope project settings
+.ropeproject
+
+# Python - mkdocs documentation
+/site
+
+# Python - mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Python - Pyre type checker
+.pyre/
+
+# Python - pytype static type analyzer
+.pytype/
+
+# Python - Cython debug symbols
+cython_debug/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store

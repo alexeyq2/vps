@@ -110,17 +110,19 @@ def download_file(url, filepath):
 
 def copy_file_to_container(docker_client, container, local_file, remote_path):
     """Copy file to container using Docker API"""
-    # Ensure target directory exists
     target_dir = os.path.dirname(remote_path)
-    container.exec_run(f"mkdir -p {target_dir}", user="root")
+    tar_path = None
     
     # Create a tar archive in a temporary file (file-based stream to minimize memory usage)
     with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as tar_file:
         try:
             tar_path = tar_file.name
-            tar = tarfile.open(name=tar_path, mode='w')
             
-            # Add file to tar with the target filename
+            # Ensure target directory exists
+            container.exec_run(f"mkdir -p {target_dir}", user="root")
+            
+            # Create tar archive
+            tar = tarfile.open(name=tar_path, mode='w')
             tar.add(local_file, arcname=os.path.basename(remote_path))
             tar.close()
             
