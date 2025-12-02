@@ -108,7 +108,7 @@ def download_file(url, filepath):
         return False
 
 
-def copy_file_to_container(docker_client, container, local_file, remote_path):
+def copy_file_to_container(container, local_file, remote_path):
     """Copy file to container using Docker API"""
     target_dir = os.path.dirname(remote_path)
     tar_path = None
@@ -143,7 +143,7 @@ def copy_file_to_container(docker_client, container, local_file, remote_path):
                 pass
 
 
-def restart_xray(docker_client, container):
+def restart_xray(container):
     """Restart xray process by sending SIGTERM"""
     try:
         # Find xray-linux process in container
@@ -210,14 +210,14 @@ def update_geo(docker_client, container):
         # Copy all updated files to container
         for local_file, filename in updated_files:
             remote_path = f"{APPDIR}/{filename}"
-            if not copy_file_to_container(docker_client, container, local_file, remote_path):
+            if not copy_file_to_container(container, local_file, remote_path):
                 log(f"Failed to copy {filename} to container")
                 return False
         
         # Restart xray to pick up new geo files
         # Note: Xray-core does not automatically reload geo files,
         # so we need to restart the process
-        restart_xray(docker_client, container)
+        restart_xray(container)
         return True
     
     return False

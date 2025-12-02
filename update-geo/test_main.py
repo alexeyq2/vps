@@ -186,7 +186,7 @@ class TestCopyFileToContainer:
         mock_container.exec_run.return_value = Mock(exit_code=0)
         mock_container.put_archive.return_value = True
         
-        result = main.copy_file_to_container(Mock(), mock_container, test_file, "/app/bin/test.dat")
+        result = main.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
         assert result is True
         mock_container.exec_run.assert_called_once_with("mkdir -p /app/bin", user="root")
         mock_container.put_archive.assert_called_once()
@@ -201,7 +201,7 @@ class TestCopyFileToContainer:
         mock_container = Mock()
         mock_container.exec_run.side_effect = Exception("Docker error")
         
-        result = main.copy_file_to_container(Mock(), mock_container, test_file, "/app/bin/test.dat")
+        result = main.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
         assert result is False
         mock_log.assert_called()
 
@@ -221,7 +221,7 @@ class TestRestartXray:
         
         mock_container.exec_run.side_effect = [mock_pgrep_result, mock_kill_result]
         
-        result = main.restart_xray(Mock(), mock_container)
+        result = main.restart_xray(mock_container)
         assert result is True
         assert mock_container.exec_run.call_count == 2
         mock_log.assert_called()
@@ -234,7 +234,7 @@ class TestRestartXray:
         mock_pgrep_result.exit_code = 1
         mock_container.exec_run.return_value = mock_pgrep_result
         
-        result = main.restart_xray(Mock(), mock_container)
+        result = main.restart_xray(mock_container)
         assert result is False
         mock_log.assert_called()
     
@@ -247,7 +247,7 @@ class TestRestartXray:
         mock_pgrep_result.output = b""
         mock_container.exec_run.return_value = mock_pgrep_result
         
-        result = main.restart_xray(Mock(), mock_container)
+        result = main.restart_xray(mock_container)
         assert result is False
         mock_log.assert_called()
     
@@ -257,7 +257,7 @@ class TestRestartXray:
         mock_container = Mock()
         mock_container.exec_run.side_effect = Exception("Docker error")
         
-        result = main.restart_xray(Mock(), mock_container)
+        result = main.restart_xray(mock_container)
         assert result is False
         mock_log.assert_called()
 
