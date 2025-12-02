@@ -68,9 +68,9 @@ def get_url_size(url):
     response = requests.head(url, allow_redirects=True, timeout=30)
     response.raise_for_status()
     content_length = response.headers.get('Content-Length')
-    if content_length:
-        return int(content_length)
-    return None
+    if not content_length:
+        raise RuntimeError(f"No Content-Length header for {url}")
+    return int(content_length)
 
 
 def get_file_size(filepath):
@@ -85,18 +85,13 @@ def need_download(url, local_file):
     if not local_file.exists():
         log.info(f"{local_file.name} has not been downloaded yet")
         return True
-    
     latest_size = get_url_size(url)
-    if latest_size is None:
-        log.warning(f"Could not determine remote size for {url}, skipping")
-        return False
-    
     existing_size = get_file_size(local_file)
-    
+
     if latest_size != existing_size:
         log.info(f"{local_file.name} size has changed, '{latest_size}' != '{existing_size}'")
         return True
-    
+
     return False
 
 
@@ -136,7 +131,9 @@ def copy_file_to_container(container, local_file, remote_path):
 
         # Read the tar file and put archive into container
         with open(tar_path, 'rb') as f:
-            container.put_archive(target_dir, f)
+            result = container.put_archive(target_dir, f)
+            if not result:
+                raise RuntimeError(f"Failed to put archive into container for {local_file.name}")
             log.info(f"Copied {local_file.name} to {remote_path} in container")
         return True
     finally:
@@ -157,13 +154,11 @@ def restart_xray(container):
     )
 
     if exec_result.exit_code != 0:
-        log.warning(f"No {PROCESS_NAME} process found, skip restart")
-        return False
+        raise RuntimeError(f"No {PROCESS_NAME} process found in container")
 
     pid = exec_result.output.decode().strip()
     if not pid:
-        log.warning(f"No {PROCESS_NAME} process found, skip restart")
-        return False
+        raise RuntimeError(f"No {PROCESS_NAME} process found in container")
 
     log.info(f"Restarting xray pid={pid}")
 
@@ -177,49 +172,48 @@ def restart_xray(container):
         log.debug(f"Sent SIGTERM to xray process {pid}")
         return True
     else:
-        log.error(f"Error sending signal to xray: {exec_result.output.decode()}")
-        return False
+        raise RuntimeError(f"Error sending signal to xray: {exec_result.output.decode()}")
 
 
 def update_geo():
     """Main update function: find container by name, download and copy files."""
     WORKDIR.mkdir(parents=True, exist_ok=True)
 
-    n_downloads = 0
-    updated_files = []
+    try:
+        n_downloads = 0
+        updated_files = []
 
-    for geo_file in GEO_FILES:
-        url = geo_file["url"]
-        filename = geo_file["filename"]
-        local_file = WORKDIR / filename
+        for geo_file in GEO_FILES:
+            url = geo_file["url"]
+            filename = geo_file["filename"]
+            local_file = WORKDIR / filename
 
-        if need_download(url, local_file):
-            if download_file(url, local_file):
+            if need_download(url, local_file):
+                download_file(url, local_file)
                 n_downloads += 1
                 updated_files.append((local_file, filename))
             else:
-                log.error(f"Failed to download {filename}")
-        else:
-            log.info(f"{filename} is up-to-date")
+                log.info(f"{filename} is up-to-date")
 
-    if n_downloads > 0:
-        log.info(f"Geofiles are different, updating {n_downloads} file(s)")
+        if n_downloads > 0:
+            log.info(f"Geofiles are different, updating {n_downloads} file(s)")
 
-        container = get_container(XRAY_CONTAINER_NAME)
-        if container is None:
-            log.error(f"Container '{XRAY_CONTAINER_NAME}' not available")
-            return None
-
-        for local_file, filename in updated_files:
-            remote_path = f"{APPDIR}/{filename}"
-            if not copy_file_to_container(container, local_file, remote_path):
-                log.error(f"Failed to copy {filename} to container")
+            container = get_container(XRAY_CONTAINER_NAME)
+            if container is None:
+                log.error(f"Container '{XRAY_CONTAINER_NAME}' not available")
                 return False
 
-        restart_xray(container)
-        return True
+            for local_file, filename in updated_files:
+                remote_path = f"{APPDIR}/{filename}"
+                copy_file_to_container(container, local_file, remote_path)
 
-    return False
+            restart_xray(container)
+            return True
+
+        return False
+    except Exception:
+        log.exception("Error updating geofiles")
+        return False
 
 
 def get_container(container_name):

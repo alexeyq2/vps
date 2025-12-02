@@ -33,19 +33,15 @@ class TestGetUrlSize:
         mock_response.headers = {}
         mock_response.raise_for_status = Mock()
         mock_head.return_value = mock_response
-        
-        size = main.get_url_size("https://example.com/file.dat")
-        assert size is None
+        with pytest.raises(RuntimeError):
+            main.get_url_size("https://example.com/file.dat")
     
     @patch('main.requests.head')
-    @patch('main.log')
-    def test_get_url_size_error(self, mock_log, mock_head):
+    def test_get_url_size_error(self, mock_head):
         """Test error handling"""
         mock_head.side_effect = Exception("Connection error")
-
-        size = main.get_url_size("https://example.com/file.dat")
-        assert size is None
-        mock_log.error.assert_called()
+        with pytest.raises(Exception):
+            main.get_url_size("https://example.com/file.dat")
 
 
 class TestGetFileSize:
@@ -110,17 +106,16 @@ class TestNeedDownload:
     
     @patch('main.get_url_size')
     @patch('main.get_file_size')
-    @patch('main.log')
-    def test_need_download_url_size_none(self, mock_log, mock_get_file_size, mock_get_url_size, tmp_path):
+    def test_need_download_url_size_none(self, mock_get_file_size, mock_get_url_size, tmp_path):
         """Test when URL size cannot be determined"""
         local_file = tmp_path / "test.dat"
         local_file.write_bytes(b"test")
-        mock_get_url_size.return_value = None
+        # get_url_size now raises when size cannot be determined
+        mock_get_url_size.side_effect = Exception("No size")
         mock_get_file_size.return_value = 500
-        
-        result = main.need_download("https://example.com/file.dat", local_file)
-        assert result is False
-        mock_log.warning.assert_called()
+
+        with pytest.raises(Exception):
+            main.need_download("https://example.com/file.dat", local_file)
 
 
 class TestDownloadFile:
@@ -128,8 +123,7 @@ class TestDownloadFile:
     
     @patch('main.requests.get')
     @patch('main.get_file_size')
-    @patch('main.log')
-    def test_download_file_success(self, mock_log, mock_get_file_size, mock_get, tmp_path):
+    def test_download_file_success(self, mock_get_file_size, mock_get, tmp_path):
         """Test successful file download"""
         test_file = tmp_path / "downloaded.dat"
         mock_response = Mock()
@@ -145,8 +139,7 @@ class TestDownloadFile:
     
     @patch('main.requests.get')
     @patch('main.get_file_size')
-    @patch('main.log')
-    def test_download_file_empty(self, mock_log, mock_get_file_size, mock_get, tmp_path):
+    def test_download_file_empty(self, mock_get_file_size, mock_get, tmp_path):
         """Test when downloaded file is empty"""
         test_file = tmp_path / "empty.dat"
         mock_response = Mock()
@@ -154,21 +147,16 @@ class TestDownloadFile:
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
         mock_get_file_size.return_value = 0
-        
-        result = main.download_file("https://example.com/file.dat", test_file)
-        assert result is False
-        mock_log.error.assert_called()
+        with pytest.raises(RuntimeError):
+            main.download_file("https://example.com/file.dat", test_file)
     
     @patch('main.requests.get')
-    @patch('main.log')
-    def test_download_file_error(self, mock_log, mock_get, tmp_path):
+    def test_download_file_error(self, mock_get, tmp_path):
         """Test download error handling"""
         test_file = tmp_path / "error.dat"
         mock_get.side_effect = Exception("Network error")
-        
-        result = main.download_file("https://example.com/file.dat", test_file)
-        assert result is False
-        mock_log.error.assert_called()
+        with pytest.raises(Exception):
+            main.download_file("https://example.com/file.dat", test_file)
 
 
 class TestCopyFileToContainer:
@@ -176,8 +164,7 @@ class TestCopyFileToContainer:
     
     @patch('main.os.unlink')
     @patch('builtins.open', new_callable=mock_open, read_data=b'tar data')
-    @patch('main.log')
-    def test_copy_file_to_container_success(self, mock_log, mock_file, mock_unlink, tmp_path):
+    def test_copy_file_to_container_success(self, mock_file, mock_unlink, tmp_path):
         """Test successful file copy to container"""
         test_file = tmp_path / "test.dat"
         test_file.write_bytes(b"test content")
@@ -192,18 +179,16 @@ class TestCopyFileToContainer:
         mock_container.put_archive.assert_called_once()
         mock_unlink.assert_called()
     
-    @patch('main.log')
-    def test_copy_file_to_container_error(self, mock_log, tmp_path):
+    def test_copy_file_to_container_error(self, tmp_path):
         """Test error handling in file copy"""
         test_file = tmp_path / "test.dat"
         test_file.write_bytes(b"test content")
         
         mock_container = Mock()
         mock_container.exec_run.side_effect = Exception("Docker error")
-        
-        result = main.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
-        assert result is False
-        mock_log.error.assert_called()
+
+        with pytest.raises(Exception):
+            main.copy_file_to_container(mock_container, test_file, "/app/bin/test.dat")
 
 
 class TestRestartXray:
@@ -226,47 +211,37 @@ class TestRestartXray:
         assert mock_container.exec_run.call_count == 2
         mock_log.info.assert_called()
     
-    @patch('main.log')
-    def test_restart_xray_no_process(self, mock_log):
+    def test_restart_xray_no_process(self):
         """Test when xray process is not found"""
         mock_container = Mock()
         mock_pgrep_result = Mock()
         mock_pgrep_result.exit_code = 1
         mock_container.exec_run.return_value = mock_pgrep_result
-        
-        result = main.restart_xray(mock_container)
-        assert result is False
-        mock_log.warning.assert_called()
+        with pytest.raises(RuntimeError):
+            main.restart_xray(mock_container)
     
-    @patch('main.log')
-    def test_restart_xray_empty_pid(self, mock_log):
+    def test_restart_xray_empty_pid(self):
         """Test when pgrep returns empty output"""
         mock_container = Mock()
         mock_pgrep_result = Mock()
         mock_pgrep_result.exit_code = 0
         mock_pgrep_result.output = b""
         mock_container.exec_run.return_value = mock_pgrep_result
-        
-        result = main.restart_xray(mock_container)
-        assert result is False
-        mock_log.warning.assert_called()
+        with pytest.raises(RuntimeError):
+            main.restart_xray(mock_container)
     
-    @patch('main.log')
-    def test_restart_xray_error(self, mock_log):
+    def test_restart_xray_error(self):
         """Test error handling in restart"""
         mock_container = Mock()
         mock_container.exec_run.side_effect = Exception("Docker error")
-        
-        result = main.restart_xray(mock_container)
-        assert result is False
-        mock_log.error.assert_called()
+        with pytest.raises(Exception):
+            main.restart_xray(mock_container)
 
 
 class TestGetContainer:
     """Tests for get_container function"""
     
-    @patch('main.log')
-    def test_get_container_found(self, mock_log):
+    def test_get_container_found(self):
         """Test when container is found"""
         mock_client = Mock()
         mock_container = Mock()
@@ -289,16 +264,13 @@ class TestGetContainer:
         assert result is None
         mock_log.debug.assert_called()
     
-    @patch('main.log')
-    def test_get_container_error(self, mock_log):
+    def test_get_container_error(self):
         """Test error handling"""
         mock_client = Mock()
         mock_client.containers.list.side_effect = Exception("Docker error")
         main.docker_client = mock_client
-
-        result = main.get_container("3x-ui")
-        assert result is None
-        mock_log.error.assert_called()
+        with pytest.raises(Exception):
+            main.get_container("3x-ui")
 
 
 class TestUpdateGeo:
@@ -308,8 +280,7 @@ class TestUpdateGeo:
     @patch('main.copy_file_to_container')
     @patch('main.download_file')
     @patch('main.need_download')
-    @patch('main.log')
-    def test_update_geo_with_downloads(self, mock_log, mock_need_download, mock_download_file, 
+    def test_update_geo_with_downloads(self, mock_need_download, mock_download_file, 
                                        mock_copy_file, mock_restart_xray, tmp_path):
         """Test update_geo when files need to be downloaded"""
         # Setup
@@ -341,8 +312,7 @@ class TestUpdateGeo:
             mock_restart_xray.assert_called_once()
     
     @patch('main.need_download')
-    @patch('main.log')
-    def test_update_geo_no_downloads(self, mock_log, mock_need_download, tmp_path):
+    def test_update_geo_no_downloads(self, mock_need_download, tmp_path):
         """Test update_geo when no files need updating"""
         workdir = tmp_path / "geo"
         workdir.mkdir()
@@ -363,8 +333,7 @@ class TestUpdateGeo:
     @patch('main.copy_file_to_container')
     @patch('main.download_file')
     @patch('main.need_download')
-    @patch('main.log')
-    def test_update_geo_copy_failure(self, mock_log, mock_need_download, mock_download_file,
+    def test_update_geo_copy_failure(self, mock_need_download, mock_download_file,
                                      mock_copy_file, tmp_path):
         """Test update_geo when file copy fails"""
         workdir = tmp_path / "geo"
@@ -373,7 +342,7 @@ class TestUpdateGeo:
         with patch('main.WORKDIR', workdir):
             mock_need_download.return_value = True
             mock_download_file.return_value = True
-            mock_copy_file.return_value = False  # Copy fails
+            mock_copy_file.side_effect = Exception("copy failed")  # Copy fails
             
             mock_container = Mock()
             mock_docker_client = Mock()
