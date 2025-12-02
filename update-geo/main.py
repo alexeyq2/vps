@@ -49,7 +49,8 @@ GEO_FILES = [
 
 _env_level = os.environ.get('LOG_LEVEL' , 'INFO').upper()
 numeric_level = getattr(logging, _env_level, logging.DEBUG)  # debug if invalid
-logging.basicConfig(level=numeric_level, format='[%(asctime)s] %(levelname)s: %(message)s')
+# logging.basicConfig(level=numeric_level, format='[%(asctime)s] %(levelname)s: %(message)s')
+logging.basicConfig(level=numeric_level, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(numeric_level)
 
