@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # доступ к docker из контейнера для обновления файлов в 3x-ui
-      - ./_work/update-geo/geo:/app/geo            # persistent storage для geo-файлов (для мониторинга и отладки)
+      - ./_work/update-geo/geo:/app/geo            # persistent storage для geo-файлов   (для мониторинга и отладки)
     working_dir: /app
     environment:
       PYTHONUNBUFFERED: 1
@@ -76,3 +76,8 @@ services:
       - ./srv/filebrowser/config:/config
     environment:
       - FB_BASEURL=${FILEBROWSER_URL}
+    logging:
+      # driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
