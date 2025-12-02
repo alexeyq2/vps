@@ -174,6 +174,18 @@ def restart_xray(container):
     else:
         raise RuntimeError(f"Error sending signal to xray: {exec_result.output.decode()}")
 
+def get_container_file_size(container, path):
+    """Return file size in bytes for a path inside container, or 0 if missing."""
+    # Use stat to get file size
+    cmd = f"stat -c %s {path}"
+    exec_result = container.exec_run(cmd, user="root")
+    if exec_result.exit_code != 0:
+        return 0
+    out = exec_result.output.decode().strip()
+    return int(out)
+
+def print_exists(path):
+    print('WWWW', path, os.path.exists(path))
 
 def update_geo():
     """Main update function: find container by name, download and copy files."""
@@ -192,16 +204,36 @@ def update_geo():
             updated_files.append((local_file, filename))
         else:
             log.info(f"{filename} is up-to-date")
+    # Always compare sizes inside container for ALL geo files and copy when sizes differ.
+    # This covers the case where files were downloaded previously but the container
+    # was unavailable and didn't get the updated files.
+    copied_any = False
+    container = get_container(XRAY_CONTAINER_NAME)
 
-    if n_downloads > 0:
-        log.info(f"Geofiles are different, updating {n_downloads} file(s)")
+    for geo_file in GEO_FILES:
+        filename = geo_file["filename"]
+        url = geo_file["url"]
+        local_file = WORKDIR / filename
+        remote_path = f"{APPDIR}/{filename}"
 
-        container = get_container(XRAY_CONTAINER_NAME)
-        for local_file, filename in updated_files:
-            remote_path = f"{APPDIR}/{filename}"
+        local_size = get_file_size(local_file)
+        remote_size = get_container_file_size(container, remote_path)
+        if local_size != remote_size:
+            log.info(f"Copying {filename} to container: local={local_size} remote={remote_size}")
             copy_file_to_container(container, local_file, remote_path)
+            copied_any = True
+        else:
+            log.debug(f"{filename} in container is up-to-date (size {local_size})")
 
-        restart_xray(container)
+    if copied_any:
+        try:
+            restart_xray(container)
+        except Exception as e:
+            log.error(f"Failed to restart xray after copying files: {e}")
+        return True
+
+    # If we downloaded files but didn't copy (container already had same sizes), still indicate success
+    if n_downloads > 0:
         return True
 
     return False

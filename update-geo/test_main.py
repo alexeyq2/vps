@@ -292,6 +292,12 @@ class TestUpdateGeo:
             mock_download_file.return_value = True
             mock_copy_file.return_value = True
             mock_restart_xray.return_value = True
+
+            for geo_file in main.GEO_FILES:
+                filename = geo_file["filename"]
+                local_file = workdir / filename
+                local_file.write_bytes(b"dummy data")
+                print(local_file)
             
             mock_container = Mock()
             mock_docker_client = Mock()
@@ -332,8 +338,9 @@ class TestUpdateGeo:
     @patch('main.copy_file_to_container')
     @patch('main.download_file')
     @patch('main.need_download')
-    def test_update_geo_copy_failure(self, mock_need_download, mock_download_file,
-                                     mock_copy_file, tmp_path):
+    @patch('main.get_container_file_size')
+    def test_update_geo_copy_failure(self, mock_get_container_file_size, mock_need_download, 
+                                     mock_download_file, mock_copy_file, tmp_path):
         """Test update_geo when file copy fails"""
         workdir = tmp_path / "geo"
         workdir.mkdir()
@@ -341,6 +348,7 @@ class TestUpdateGeo:
         with patch('main.WORKDIR', workdir):
             mock_need_download.return_value = True
             mock_download_file.return_value = True
+            mock_get_container_file_size.return_value = 100
             mock_copy_file.side_effect = Exception("copy failed")  # Copy fails
             
             mock_container = Mock()
@@ -350,7 +358,7 @@ class TestUpdateGeo:
             mock_docker_client.containers.list.return_value = [mock_container]
 
             main.docker_client = mock_docker_client
-            with pytest.raises(Exception):
+            with pytest.raises(Exception, match="copy failed"):
                 main.update_geo()
 
 
