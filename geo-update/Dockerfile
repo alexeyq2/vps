@@ -4,7 +4,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py ./
+COPY geo_update.py ./
 
-ENTRYPOINT ["/usr/local/bin/python", "main.py", "--delay"]
+ENTRYPOINT ["/usr/local/bin/python", "geo_update.py", "--delay"]
 

@@ -49,7 +49,6 @@ GEO_FILES = [
 
 _env_level = os.environ.get('LOG_LEVEL' , 'INFO').upper()
 numeric_level = getattr(logging, _env_level, logging.DEBUG)  # debug if invalid
-# logging.basicConfig(level=numeric_level, format='[%(asctime)s] %(levelname)s: %(message)s')
 logging.basicConfig(level=numeric_level, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(numeric_level)
@@ -116,8 +115,6 @@ def copy_file_to_container(container, local_file, remote_path):
     """Copy file to container using Docker API"""
     target_dir = os.path.dirname(remote_path)
     tar_path = None
-    # Create a tar archive in a temporary file (file-based stream to minimize memory usage)
-    tar_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as tar_file:
             tar_path = tar_file.name
@@ -137,7 +134,6 @@ def copy_file_to_container(container, local_file, remote_path):
             log.info(f"Copied {local_file.name} to {remote_path} in container")
         return True
     finally:
-        # Clean up temporary tar file
         try:
             if tar_path:
                 os.unlink(tar_path)
@@ -147,7 +143,6 @@ def copy_file_to_container(container, local_file, remote_path):
 
 def restart_xray(container):
     """Restart xray process by sending SIGTERM"""
-    # Find xray-linux process in container
     exec_result = container.exec_run(
         f"pgrep {PROCESS_NAME}",
         user="root"
@@ -162,7 +157,6 @@ def restart_xray(container):
 
     log.info(f"Restarting xray pid={pid}")
 
-    # Send SIGTERM to xray process
     exec_result = container.exec_run(
         f"kill {pid}",
         user="root"
@@ -176,7 +170,6 @@ def restart_xray(container):
 
 def get_container_file_size(container, path):
     """Return file size in bytes for a path inside container, or 0 if missing."""
-    # Use stat to get file size
     cmd = f"stat -c %s {path}"
     exec_result = container.exec_run(cmd, user="root")
     if exec_result.exit_code != 0:
@@ -187,7 +180,7 @@ def get_container_file_size(container, path):
 def print_exists(path):
     print('WWWW', path, os.path.exists(path))
 
-def update_geo():
+def geo_update():
     """Main update function: find container by name, download and copy files."""
 
     n_downloads = 0
@@ -204,9 +197,7 @@ def update_geo():
             updated_files.append((local_file, filename))
         else:
             log.info(f"{filename} is up-to-date")
-    # Always compare sizes inside container for ALL geo files and copy when sizes differ.
-    # This covers the case where files were downloaded previously but the container
-    # was unavailable and didn't get the updated files.
+
     copied_any = False
     container = get_container(XRAY_CONTAINER_NAME)
 
@@ -232,12 +223,10 @@ def update_geo():
             log.error(f"Failed to restart xray after copying files: {e}")
         return True
 
-    # If we downloaded files but didn't copy (container already had same sizes), still indicate success
     if n_downloads > 0:
         return True
 
     return False
-
 
 
 def get_container(container_name):
@@ -245,7 +234,6 @@ def get_container(container_name):
     assert docker_client is not None
     containers = docker_client.containers.list(filters={"name": container_name})
     if not containers:
-        # No matching container found — signal this as an error
         raise RuntimeError(f"Container '{container_name}' not found")
 
     return containers[0]
@@ -265,7 +253,6 @@ def main():
     signal.signal(signal.SIGTERM, _handle_termination)
     signal.signal(signal.SIGINT, _handle_termination)
     
-    # Default: run immediately. Use --delay to sleep before first run.
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--delay", nargs='?', type=int, const=-1,
                         help="sleep before first run; provide a number in seconds or omit to sleep a random 10-60s")
@@ -286,7 +273,6 @@ def main():
 
     WORKDIR.mkdir(parents=True, exist_ok=True)
 
-    # Connect to Docker
     try:
         global docker_client
         docker_client = docker.from_env()
@@ -294,21 +280,15 @@ def main():
         log.error(f"Error connecting to Docker: {e}")
         sys.exit(1)
     
-    # Main update loop - run every UPDATE_INTERVAL (default 18 hours) plus small random jitter
-    
     while True:
         start_time = time.time()
-        
-        # Update geo files
         try:
-            # update_geo will use the module-level docker_client
-            result = update_geo()
+            result = geo_update()
             elapsed = int(time.time() - start_time)
             log.info(f"Geofiles update OK in {elapsed} sec")
         except Exception as e:
             log.exception("Error during update", exc_info=e)
         
-        # Wait for next update (UPDATE_INTERVAL hours + jitter)
         update_interval = get_update_delay()
         log.debug(f"Next update in {update_interval // 3600} hours (+ jitter)")
         if stop_event.wait(update_interval):

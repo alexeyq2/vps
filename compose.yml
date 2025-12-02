@@ -19,7 +19,7 @@ services:
     # entrypoint: ['/bin/ash', '-c', 'while :; do echo here; sleep 60; done']
 
   update-geo:
-    build: ./update-geo
+    build: ./geo-update
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # доступ к docker из контейнера для обновления файлов в 3x-ui

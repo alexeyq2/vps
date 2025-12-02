@@ -5,6 +5,7 @@ srv/
 *.deleted
 bbr.sh
 *.log
+DELETED.*
 
 # Python - Byte-compiled / optimized / DLL files
 __pycache__/
