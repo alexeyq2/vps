@@ -1,49 +1,52 @@
-# VPS for masses
+# VPS для всех
 
-- 3X-UI web panel for X-Ray
-- autoupdate X-Ray geo.dat files for routing
-- your own website with Let's Encrypt SSL certificate for VLESS
-- preinstalled web-based file share
+- Веб-панель 3X-UI для X-Ray
+- Автообновление geo.dat файлов для маршрутизации X-Ray
+- Ваш сайт с SSL от Let's Encrypt для VLESS
+- Предустановленный файлообменник c веб-мордой
 
-## Installation on fresh VPS (Ubuntu 24.04 LTS)
-1. `./setup-all.sh`  # install docker etc.
+## Установка на чистый VPS (Ubuntu 24.04 LTS)
+ 
+Установить git, docker, скачать код проекта
+`./get.sh`  # 
 
-## Installation
-1. `cp .env-default .env` # file with your domain name
-2. edit .env file, variables:
-  - VPS_DOMAIN - your domain
-  - VPS_EMAIL  - your email (optional, for Let's Encrypt)
-  - ACME_SERVER - choose Let's Encrypt testing server or production server
-  - SUBSCRIPTION_URL - uniquie path (secret path) for VPN cients subscription. Do not forget to CHANGE IT!
-3. `cp -r srv-default srv`  # "srv" is where configs and data files live
+## Настройка
+1. `cp .env-default .env` # файл с вашим доменом
+2. отредактируйте `.env`, переменные:
+  - VPS_DOMAIN - ваш домен
+  - VPS_EMAIL  - ваш email (необязательно, для Let's Encrypt)
+  - ACME_SERVER - выберите тестовый или боевой сервер Let's Encrypt
+  - SUBSCRIPTION_URL - уникальный путь (секретный) для подписок(subscription) файла VPN-клиентов. Поменяйте на что-нибудь свое, чтобы не палиться.
+3. `cp -r srv-default srv`  # "srv" — тут хранятся конфиги и данные.
 
-## Important folders and files
+## Важные папки и файлы
 
-    srv - config files, database, file sharing files
-        - keep this folder when update or reinstall
-    srv-default - copy to "srv" and begin with it
-    _work - working files. safe to remove
-    .env - here you set up your domain name
+    srv - файлы конфигурации, база данных, файлообменник.
+        - сохраняйте эту папку при обновлении или переустановке
+    srv-default - скопируйте в "srv" и начинайте с неё
+    _work - рабочие файлы. можно удалять
+    .env - здесь вы настраиваете "VPS для масс" под себя
 
-
-## Start, Stop, Logs
+## Запуск, остановка, логи
 
 * `./up.sh`   # docker compose up [-d]
 * `./down.sh` # docker compose down
-* `./log.sh` # docker compose logs [-f]
+* `./log.sh`  # docker compose logs [-f]
 
-## Switch testing certificate to production
+## Переключение с тестового сертификата на боевой
 
-If everything runs and your website opens and has testing SSL cert, you want real certificate. 
+Если всё работает и сайт открывается с тестовым SSL, можно получить реальный сертификат:
 
-1. Uncomment production ACME_SERVER in .env file
-2. Run `./build.sh`, it will rebuild certbot container with new ACME_SERVER
+1. Раскомментируйте production ACME_SERVER в файле `.env`
+2. остановите certbot
+. удалите файлы
+. запустите сертбот
 
-Check that certbot has got new cert
+Проверьте, что certbot получил сертификат:
 
 3. `docker compose logs -f certbot`
 
-Output should lool like below:
+Ожидаемый вывод:
 
     certbot_1      | certbot renew loop start
     ...
@@ -55,13 +58,13 @@ Output should lool like below:
     certbot_1      |  Restarting containers with "certbot_restart" label
     certbot_1      |  Restart container vps_3x-ui_1
 
-## Update
+## Обновление
 
-update all
+Обновить всё:
 
 `./update.sh`
 
-update certbot, 3x-ui and nginx
+Обновить certbot, 3x-ui и nginx:
 
 ```
 ./down.sh
@@ -69,7 +72,7 @@ update certbot, 3x-ui and nginx
 ./up.sh
 ```
 
-update this project
+Обновить этот проект:
 
 ```
 ./down.sh
@@ -78,9 +81,9 @@ update this project
 ```
 
 
-## Reconfig from scratch
+## Реконфигурация с нуля
 
-Remove `srv` and `_work`, copy `srv-default` to srv and repeat installation steps. Следующий скрипт это делает:
+Удалите `srv` и `_work`, скопируйте `srv-default` в `srv` и повторите шаги установки. Следующий скрипт это делает:
 
 
 `./reconfig.sh`
