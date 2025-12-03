@@ -37,7 +37,7 @@
 If everything runs and your website opens and has testing SSL cert, you want real certificate. 
 
 1. Uncomment production ACME_SERVER in .env file
-2. Run `./update.sh`, it will rebuild certbot
+2. Run `./build.sh`, it will rebuild certbot container with new ACME_SERVER
 
 Check that certbot has got new cert
 
