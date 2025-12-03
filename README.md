@@ -86,7 +86,4 @@
 Удалите `srv` и `_work`, скопируйте `srv-default` в `srv` и повторите шаги установки. Следующий скрипт это делает:
 
 
-`./reconfig.sh`
-
-
-
+`./reconfig-from-scratch.sh`
