@@ -14,6 +14,7 @@
   - VPS_DOMAIN - your domain
   - VPS_EMAIL  - your email (optional, for Let's Encrypt)
   - ACME_SERVER - choose Let's Encrypt testing server or production server
+  - SUBSCRIPTION_URL - uniquie path (secret path) for VPN cients subscription. Do not forget to CHANGE IT!
 3. `cp -r srv-default srv`  # "srv" is where configs and data files live
 
 ## Important folders and files
@@ -56,21 +57,33 @@ Output should lool like below:
 
 ## Update
 
-update everything
+update all
 
-`./update-all.sh`
+`./update.sh`
 
-update 3X-UI, cerbot and nginx only
+update certbot, 3x-ui and nginx
 
-`./update-3xui.sh`
+```
+./down.sh
+./update-images.sh
+./up.sh
+```
+
+update this project
+
+```
+./down.sh
+./update-code-and-build.sh
+./up.sh
+```
 
 
 ## Reconfig from scratch
 
-- `./down.sh`
-- `./reconfig.sh`
-- `./up.sh`
+Remove `srv` and `_work`, copy `srv-default` to srv and repeat installation steps. Следующий скрипт это делает:
 
-Basically, copy srv-default to srv and repeat installation steps
+
+`./reconfig.sh`
+
 
 
