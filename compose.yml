@@ -75,7 +75,7 @@ services:
       - ./srv/filebrowser/database:/database
       - ./srv/filebrowser/config:/config
     environment:
-      - FB_BASEURL=${FILEBROWSER_URL}
+      - FB_BASE_URL=${FILEBROWSER_URL}
     logging:
       # driver: "json-file"
       options:

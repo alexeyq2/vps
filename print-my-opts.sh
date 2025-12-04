@@ -8,5 +8,5 @@ env | grep ACME_
 env | grep SUBSCRIPTION_
 
 echo == сертификаты
-echo /etc/letsencrypt/live/$VPS_DOMAIN/fullchain.pem
-echo /etc/letsencrypt/live/$VPS_DOMAIN/privkey.pem
+echo srv/certbot/etc/letsencrypt/live/$VPS_DOMAIN/fullchain.pem
+echo srv/certbot/etc/letsencrypt/live/$VPS_DOMAIN/privkey.pem

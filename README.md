@@ -8,55 +8,90 @@
 ## Установка на чистый VPS (Ubuntu 24.04 LTS)
  
 Установить git, docker, скачать код проекта
-`./get.sh`  # 
+
+`curl -sL https://raw.githubusercontent.com/alexeyq2/vps/refs/heads/master/install.sh | bash`
 
 ## Настройка
-1. `cp .env-default .env` # файл с вашим доменом
-2. отредактируйте `.env`, переменные:
-  - VPS_DOMAIN - ваш домен
-  - VPS_EMAIL  - ваш email (необязательно, для Let's Encrypt)
-  - ACME_SERVER - выберите тестовый или боевой сервер Let's Encrypt
-  - SUBSCRIPTION_URL - уникальный путь (секретный) для подписок(subscription) файла VPN-клиентов. Поменяйте на что-нибудь свое, чтобы не палиться.
-3. `cp -r srv-default srv`  # "srv" — тут хранятся конфиги и данные.
+1. Создайте файл  `.env` из шаблона
 
-## Важные папки и файлы
+    `cp .env-default .env` 
+
+2. отредактируйте `.env`, переменные:
+  - `VPS_DOMAIN` - ваш домен
+  - `VPS_EMAIL`  - ваш email (необязательно, для Let's Encrypt)
+  - `ACME_SERVER` - выберите тестовый или боевой сервер Let's Encrypt
+  - `SUBSCRIPTION_URL` - уникальный путь (секретный) для подписок(subscription) файла VPN-клиентов. Поменяйте на что-нибудь свое, чтобы не палиться.
+
+3. Создайте папку `srv` — тут хранятся конфиги VPN, сертификат и содержимое веб-сайта.
+
+   `cp -r srv-default/ srv/`
+
+### Важные папки и файлы
 
     srv - файлы конфигурации, база данных, файлообменник.
         - сохраняйте эту папку при обновлении или переустановке
     srv-default - скопируйте в "srv" и начинайте с неё
     _work - рабочие файлы. можно удалять
-    .env - здесь вы настраиваете "VPS для масс" под себя
+    .env - здесь вы настраиваете VPS под свой домен
 
-## Запуск, остановка, логи
+### Запуск, остановка, логи
 
 * `./up.sh`   # docker compose up [-d]
 * `./down.sh` # docker compose down
 * `./log.sh`  # docker compose logs [-f]
 
-## Переключение с тестового сертификата на боевой
+### Проверить, что certbot получил сертификат:
+
+ `./logs.sh -f certbot`
+
+Ожидаемый вывод:
+
+```
+certbot-1      | Successfully received certificate.
+certbot-1      | Certificate is saved at: /etc/letsencrypt/live/VPS_DOMAIN/fullchain.pem
+certbot-1      | Key is saved at:         /etc/letsencrypt/live/VPS_DOMAIN/privkey.pem
+certbot-1      | This certificate expires on YYYY-MM-SS.
+certbot-1      | These files will be updated when the certificate renews.
+certbot-1      | NEXT STEPS:
+```
+
+### Cоздайте Inbound в 3X-UI:
+
+Входящее HTTPS-соединение попадает на 3X-UI, он сидит на внешнем интерфейсе. Nginx слушает только на внутреннем `localhost:10443`. 3X-UI перенаправляет внешний порт 443 на внутренний nginx.
+
+    браузер -> VPS_DOMAIN:443 
+        -> 3x-ui vless inbound:443
+            -> nginx docker container:10443 
+
+
+Параметры Inbound в 3X-UI (остальные можно не трогать):
+
+
+    Port: 443
+    Security - выбрать вкладку Reality
+        Target: 127.0.0.1:10443
+        SNI: VPS_DOMAIN
+        Public Key/Private Key - нажмите кнопку "Get New Cert"
+
+С таким Inbound VLESS-Reality `https://VPS_DOMAIN` будет работать.
+
+При создании клиента для inbound укажите `flow: xtlx-rprx-vision`. Это и есть **VLESS-Reality**.
+
+### Переключение с тестового сертификата на боевой
 
 Если всё работает и сайт открывается с тестовым SSL, можно получить реальный сертификат:
 
 1. Раскомментируйте production ACME_SERVER в файле `.env`
-2. остановите certbot
-. удалите файлы
-. запустите сертбот
+2. Запустите `./delete-certificate.sh`
 
-Проверьте, что certbot получил сертификат:
 
-3. `docker compose logs -f certbot`
+## Пароль к FileBrowser
 
-Ожидаемый вывод:
+Пишется в лог при первом старте. Нужно удалить все данные filebrowser и он создаст новый пароль и напишет в лог. Следующая команда сделает это и выведет пароль:
 
-    certbot_1      | certbot renew loop start
-    ...
-    certbot_1      | Requesting a certificate for <VPS_DOMAIN>
-    certbot_1      | Using the webroot path /nginx/www/http for all unmatched domains.
-    certbot_1      | Waiting for verification...
-    certbot_1      | Running deploy-hook command: /app/restart_certbot_containers.py
-    certbot_1      | Hook 'deploy-hook' ran with output:
-    certbot_1      |  Restarting containers with "certbot_restart" label
-    certbot_1      |  Restart container vps_3x-ui_1
+`./delete-filebrowser-data.sh`
+    
+    filebrowser-1  | User 'admin' initialized with randomly generated password: zbKQSdn9VJPM6kAV
 
 ## Обновление
 
@@ -82,6 +117,6 @@
 
 ## Реконфигурация с нуля
 
-Удалите `srv` и `_work`, скопируйте `srv-default` в `srv` и повторите шаги установки. Следующий скрипт это делает:
+Удалите `srv` и `_work`, скопируйте `srv-default` в `srv` и повторите настройку. Следующий скрипт все сбросит как было (кроме  `.env` - его вы, скорее всего, хотите оставить):
 
 `./reconfig-from-scratch.sh`
