@@ -1,3 +1,5 @@
+RELEASE=feature/rusreadme
+
 GREEN=$(tput setaf 2) # Set foreground color to red
 NC=$(tput sgr0)    # Reset all attributes
 
@@ -15,6 +17,7 @@ EOF
 sudo apt install -y git-core mc curl wget htop
 git clone git@github.com:alexeyq2/vps.git
 cd vps
+git checkout $RELEASE
 
 ./provision-docker.sh
 ./provision-syslog.sh
