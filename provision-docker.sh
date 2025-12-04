@@ -32,5 +32,5 @@ systemctl start docker
 
 usermod -aG docker $USER
 
-echo Docker установлен успешно.
-echo Перезайдите в систему чтобы изменения вступили в силу.
+echo Docker установлен OK
+echo Перезайдите в систему, чтобы изменения вступили в силу.

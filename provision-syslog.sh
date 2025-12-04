@@ -4,4 +4,4 @@
 grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null || echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
 systemctl restart systemd-journald
 
-echo OK
+echo Syslog настроен OK
