@@ -7,17 +7,20 @@ NC=$(tput sgr0)    # Reset all attributes
 
 cat << EOF 
 $GREEN
-* VPS со своим HTTPS для VLESS
-* (вариант steal-from-yourself)
-*
-+ URL подписки для программ-клиентов (subscription URL)
-+ файлообменник с веб-мордой
-+ автоматическое обновление geoip и geoip_RU файлов
+
+      VPS со своим HTTPS для VLESS
+      (вариант steal-from-yourself)
+
+* получение и авто-продление реального HTTPS сертификата oт Let's Encrypt
+* 3X-UI - панель управления VPN сервером XRay-core
+* файлообменник с веб-мордой
+* автоматическое обновление geoip и geoip_RU файлов
+* URL подписки для программ-клиентов (subscription URL)
+  в которой можно указать несколько ваших серверов
 
 Подготовка машины:
 * Установка git, docker, утилит, настройка сети
 * Скачивание кода проекта
-
 $NC
 EOF
 
@@ -34,7 +37,7 @@ else
     sudo apt -q update
 fi
 
-sudo apt install -yq git-core curl wget htop mc vim nano apt-transport-https ca-certificates
+sudo apt install -yq git-core curl htop mc nano apt-transport-https ca-certificates
 
 ## Логи
 # уменьшить размер системных логов - логи докера могут разрастись до гигабайт в /var/log/journal
@@ -50,7 +53,7 @@ CHANGED=false
 
 add_if_missing() {
     grep -q "^[[:space:]]*$1[[:space:]]*=" "/etc/sysctl.conf" 2>/dev/null || {
-        echo "$1" || sudo tee -a "/etc/sysctl.conf"
+        echo "$1" | sudo tee -a "/etc/sysctl.conf"
         return 0
     }
     return 1
@@ -61,17 +64,19 @@ add_if_missing "net.ipv4.tcp_congestion_control=bbr" && CHANGED=true
 
 $CHANGED && sudo sysctl -p >/dev/null 2>&1
 
-echo "$GREEN Текущие настройки TCP: $NC"
+echo $GREEN Текущие настройки TCP:
 sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc
+echo $NC
 
 
 ## DOCKER COMPOSE v2
-install_docker_compose_v2() {    
-    if docker compose --version &> /dev/null ;then
-        echo Docker уже установлен, отлично! OK
-        return 0
-    fi
 
+if docker compose --version &> /dev/null ;then
+    echo "$GREEN Docker уже установлен, отлично! OK $NC"
+    DOCKER_WARNING=
+else
+    DOCKER_WARNING="Установлен docker. Выполните команду newgrp docker или перелогинитьтесь"
+    
     # Add Docker's official GPG key:
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -86,34 +91,15 @@ Components: stable
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
-    sudo apt -yq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
+    sudo apt update
+    sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     sudo systemctl enable docker
     sudo systemctl start docker
 
     CURRENT_USER=${SUDO_USER:-$(whoami)}
-    usermod -aG docker $CURRENT_USER
-    newgrp docker
+    sudo usermod -aG docker $CURRENT_USER
+fi
 
-    # Проверка docker compose
-    if docker compose --version &> /dev/null; then
-        echo "Docker Compose установлен. OK"
-    else
-        echo "Ошибка. docker compose --version не запускается. Проверьте установку."
-        return 1
-    fi
-
-    # Проверка Docker (ваш существующий код)
-    if docker run ubuntu echo hello-world &> /dev/null ;then
-        echo "Docker работает отлично! OK"
-    else
-        echo "Docker не смог запустить контейнер. Проверьте установку." 
-        echo "Перезайдите в систему или выполните: newgrp docker"
-        return 1
-    fi
-}
-
-install_docker_compose_v2 || exit 1
 
 ## Код проекта
 VPS_DIR=vps-vless
@@ -136,11 +122,7 @@ fi
 
 cat << EOF
 $GREEN
-Далее: 
- * переходите в папку $VPS_DIR
- * настройте переменные по инструкциям в README.md
- * настройте ACME_SERVER на получение реального сертификата
- * если не работает - переключите на получение тестового и решайте
- * настраивайте свой VPN в панели 3X-UI
- * подключаете клиента по QR-коду или ссылке vless://...
+Вроде все OK
+$DOCKER_WARNING
+Переходите в папку $VPS_DIR и настройте файл .env по инструкции в README.md
 EOF
