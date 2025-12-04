@@ -6,7 +6,7 @@ GREEN=$(tput setaf 2) # Set foreground color to red
 NC=$(tput sgr0)    # Reset all attributes
 
 cat << EOF 
-$GREE
+$GREEN
 * VPS со своим HTTPS для VLESS
 * (вариант steal-from-yourself)
 *
@@ -38,7 +38,9 @@ sudo apt install -yq git-core curl wget htop mc vim nano apt-transport-https ca-
 
 ## Логи
 # уменьшить размер системных логов - логи докера могут разрастись до гигабайт в /var/log/journal
-grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null || echo "SystemMaxUse=100M" | sudo tee -a /etc/systemd/journald.conf
+grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null \
+|| echo "SystemMaxUse=100M" | sudo tee -a /etc/systemd/journald.conf
+
 sudo systemctl restart systemd-journald
 echo Syslog настроен OK
 
@@ -49,7 +51,6 @@ CHANGED=false
 add_if_missing() {
     grep -q "^[[:space:]]*$1[[:space:]]*=" "/etc/sysctl.conf" 2>/dev/null || {
         echo "$1" >> "/etc/sysctl.conf"
-        echo "Добавлено: $1"
         return 0
     }
     return 1
@@ -60,7 +61,7 @@ add_if_missing "net.ipv4.tcp_congestion_control=bbr" && CHANGED=true
 
 $CHANGED && sudo sysctl -p >/dev/null 2>&1
 
-echo "Текущие настройки TCP:"
+echo "$GREEN Текущие настройки TCP: $NC"
 sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc
 
 
@@ -72,23 +73,23 @@ install_docker_compose_v2() {
     fi
 
     # Add Docker's official GPG key:
-    apt-get update
-    apt-get install -y ca-certificates curl
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    chmod a+r /etc/apt/keyrings/docker.asc
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
 
     # Add the repository to Apt sources:
-    echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-    $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-    tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update
+    sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF    
 
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    sudo apt -yq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-    systemctl enable docker
-    systemctl start docker
+    sudo systemctl enable docker
+    sudo systemctl start docker
 
     CURRENT_USER=${SUDO_USER:-$(whoami)}
     usermod -aG docker $CURRENT_USER
