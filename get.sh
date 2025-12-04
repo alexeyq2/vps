@@ -16,6 +16,19 @@ EOF
 
 read -p "Нажмите Enter чтобы продолжить:"
 
+which sudo >/dev/null
+WHICH_SUDO=$?
+
+set -e  # остановиться при ошибке
+
+if [ $WHICH_SUDO != 0 ]; then
+    [ $EUID != 0 ] && echo "Не установлен sudo и не root доступ, установка невозможна" && exit 1 
+    echo "Устанавливаем sudo..."
+    apt update
+    apt install -y sudo
+else
+    sudo apt update
+fi
 
 sudo apt install -y git-core mc curl wget htop
 git clone git@github.com:alexeyq2/vps.git
