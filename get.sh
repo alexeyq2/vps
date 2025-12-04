@@ -7,10 +7,11 @@ NC=$(tput sgr0)    # Reset all attributes
 
 cat << EOF 
 $GREEN
-          ╔═════════════════╗
-          ║  VPS для всех   ║
-          ╚═════════════════╝
+
+* VPS для всех =
+
 Установка git, docker, кода проекта, настройка сети.
+Введите пароль sudo, потом д=
 
 $NC
 EOF
@@ -34,7 +35,7 @@ sudo ./provision-syslog.sh
 sudo ./provision-bbr.sh
 sudo ./provision-docker.sh
 
-cat <EOF
+cat << EOF
 $GREEN
 Далее: 
  * попробуйте команду - должна работать: docker compose -v
