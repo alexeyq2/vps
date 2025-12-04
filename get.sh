@@ -1,7 +1,16 @@
-echo -e "\033[32m  == VPS для масс == \033[0m"
-echo -e "Программа спросит пароль sudo"
-echo "- для установки git, docker и настройки сети"
-echo "Нажмите Enter чтобы продолжить..."
+GREEN=$(tput setaf 2) # Set foreground color to red
+NC=$(tput sgr0)    # Reset all attributes
+
+cat << EOF 
+$GREEN
+        ╔═════════════════╗
+        ║  VPS для всех   ║
+        ╚═════════════════╝
+$NC
+Программа спросит пароль sudo для установки 
+git, docker и настройки сети
+EOF
+# read -p "Нажмите Enter чтобы продолжить:"
 
 sudo apt install -y git-core mc curl wget htop
 git clone git@github.com:alexeyq2/vps.git
