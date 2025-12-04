@@ -9,10 +9,10 @@ $GREEN
         ║  VPS для всех   ║
         ╚═════════════════╝
 $NC
-Будут выполнены:
-Установка git, скачивание кода проекта, установка docker, настройка сети.
-Скрипт спросит пароль sudo.
+Установка git, docker, кода проекта, настройка сети.
 EOF
+
+sleep 1
 
 which sudo >/dev/null
 WHICH_SUDO=$?
@@ -33,9 +33,9 @@ git clone https://github.com/alexeyq2/vps.git
 cd vps
 git checkout $RELEASE
 
-sudo ./provision-docker.sh
 sudo ./provision-syslog.sh
 sudo ./provision-bbr.sh
+sudo ./provision-docker.sh
 
 echo OK
 echo Далее настройте переменные по инструкциям в README.md

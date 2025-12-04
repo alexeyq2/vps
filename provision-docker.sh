@@ -1,11 +1,9 @@
-
-
-# DOCKER
+#!/bin/bash -e
 
 docker compose --version > /dev/null 2>&1
 
 if [ $? == 0 ] ;then
-  echo Docker уже установлен, пропускаем установку.
+  echo Docker уже установлен, отлично!
   exit 0
 fi
 
@@ -27,10 +25,12 @@ echo \
    tee /etc/apt/sources.list.d/docker.list > /dev/null
  apt-get update
 
-# install the latest version
- apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# test it!
- docker run hello-world
+systemctl enable docker
+systemctl start docker
 
-# DONE!
+usermod -aG docker $USER
+
+echo Docker установлен успешно.
+echo Перезайдите в систему чтобы изменения вступили в силу.
