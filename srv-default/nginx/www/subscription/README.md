@@ -1,14 +1,15 @@
-# Useful commands
+Сюда можно положить ссылки на все ваши сервера
+ 
+Файл `ss.txt` содержит в каждой строке `vless://` ссылку.
+Отредактируйте его и превратите в `ss.base64`
+как показано ниже
 
-Encode file
+Закодировать файл в base64 и сохранить
 
     cat ss.txt | base64 -w 0 > ss.base64
-    # (-w 0 means do not wrap, create single long string)
+    
+    # (-w 0 значит не переносить длинные строки, word-wrap 0)
 
-Decode file
+Раскодировать и просмотреть
     
     cat ss.base64 | base64 -d
-
-Encode single string
-    
-    echo -n "URL" | base64 -w 0
