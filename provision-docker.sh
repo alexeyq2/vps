@@ -2,6 +2,17 @@
 
 # DOCKER
 
+docker compose --version > /dev/null 2>&1
+
+if [ $? == 0 ] ;then
+  echo Docker уже установлен, пропускаем установку.
+  exit 0
+fi
+
+read -p "Установить docker? [yes/no]: " answer
+[ "$answer" == "${answer#[Yy]}" ] && exit 0
+
+
 # Add Docker's official GPG key:
  apt-get update
  apt-get install -y ca-certificates curl
