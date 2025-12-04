@@ -50,7 +50,7 @@ CHANGED=false
 
 add_if_missing() {
     grep -q "^[[:space:]]*$1[[:space:]]*=" "/etc/sysctl.conf" 2>/dev/null || {
-        echo "$1" >> "/etc/sysctl.conf"
+        echo "$1" || sudo tee -a "/etc/sysctl.conf"
         return 0
     }
     return 1
@@ -84,7 +84,7 @@ URIs: https://download.docker.com/linux/ubuntu
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: stable
 Signed-By: /etc/apt/keyrings/docker.asc
-EOF    
+EOF
 
     sudo apt -yq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
@@ -143,3 +143,4 @@ $GREEN
  * если не работает - переключите на получение тестового и решайте
  * настраивайте свой VPN в панели 3X-UI
  * подключаете клиента по QR-коду или ссылке vless://...
+EOF
