@@ -6,12 +6,11 @@ GREEN=$(tput setaf 2) # Set foreground color to red
 NC=$(tput sgr0)    # Reset all attributes
 
 cat << EOF 
-$GREEN
-*
+$GREE
 * VPS со своим HTTPS для VLESS
 * (вариант steal-from-yourself)
 *
-+ секретный URL подписки для программ-клиентов (subscription URL)
++ URL подписки для программ-клиентов (subscription URL)
 + файлообменник с веб-мордой
 + автоматическое обновление geoip и geoip_RU файлов
 
@@ -39,8 +38,8 @@ sudo apt install -yq git-core curl wget htop mc vim nano apt-transport-https ca-
 
 ## Логи
 # уменьшить размер системных логов - логи докера могут разрастись до гигабайт в /var/log/journal
-grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null || echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
-systemctl restart systemd-journald
+grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null || echo "SystemMaxUse=100M" | sudo tee -a /etc/systemd/journald.conf
+sudo systemctl restart systemd-journald
 echo Syslog настроен OK
 
 ## BBR
