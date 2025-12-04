@@ -1,15 +1,9 @@
 #!/bin/bash -e
 
-docker compose --version > /dev/null 2>&1
-
-if [ $? == 0 ] ;then
-  echo Docker уже установлен, отлично!
+if docker compose --version &> /dev/null ;then
+  echo Docker уже установлен, отлично! OK
   exit 0
 fi
-
-read -p "Установить docker? [yes/no]: " answer
-[ "$answer" == "${answer#[Yy]}" ] && exit 0
-
 
 # Add Docker's official GPG key:
  apt-get update
@@ -30,7 +24,8 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin do
 systemctl enable docker
 systemctl start docker
 
-usermod -aG docker $USER
+CURRENT_USER=${SUDO_USER:-$(whoami)}
+usermod -aG docker $CURRENT_USER
+newgrp docker
 
 echo Docker установлен OK
-echo Перезайдите в систему, чтобы изменения вступили в силу.
