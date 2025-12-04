@@ -17,7 +17,7 @@ $NC
 EOF
 
 
-if ! sudo -v; then
+if ! sudo --version >/dev/null; then
     [ $EUID != 0 ] && echo "Не установлен sudo и не root доступ, установка невозможна" && exit 1 
     echo "Устанавливаем sudo..."
     apt update
