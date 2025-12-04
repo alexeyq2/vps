@@ -14,8 +14,6 @@ $NC
 Скрипт спросит пароль sudo.
 EOF
 
-read -p "Нажмите Enter чтобы продолжить:"
-
 which sudo >/dev/null
 WHICH_SUDO=$?
 
