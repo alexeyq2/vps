@@ -1,0 +1,52 @@
+<html>
+
+<head>
+  <title>400 The plain HTTP request was sent to HTTPS port</title>
+</head>
+
+<body>
+  <center>
+    <h1>400 Bad Request</h1>
+    
+    The plain HTTP request was sent to HTTPS port
+    <br>
+    <br>
+    <div class="message">
+      Redirecting to <a id="redirect-link" href="#"><span id="redirect-span">https://</span></a>
+      in
+      <span id="seconds"></span> sec
+    </div>
+
+    <hr>
+    nginx/1.29.3
+  </center>
+</body>
+
+<script>
+  const seconds = document.getElementById('seconds');
+  const link = document.getElementById('redirect-link');
+  const span = document.getElementById('redirect-span');
+  const httpsUrl = 'https://' + location.hostname + location.pathname + location.search;
+
+  link.href = httpsUrl;
+  span.textContent = httpsUrl;
+
+  const WAIT_SEC = 10;
+  const FPS = 0.67;
+  let remaining = WAIT_SEC * 1000; // in milliseconds
+
+  function tick() {
+    remaining -= Math.round(2000 / FPS * (Math.random()));
+    seconds.textContent = Math.round(Math.round(remaining / 100)) / 10; // 1 decimal point
+    if (remaining <= 0) {
+      clearInterval(interval);
+      link.click();
+    }
+  }
+
+  const interval = setInterval(tick, 1000 / FPS);
+
+  tick();
+</script>
+
+</html>

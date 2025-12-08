@@ -14,3 +14,5 @@
 
 будет conf.d/default.conf, а не nginx.conf, 
 см. command в сервисе nginx в compose.yml
+
+default.conf импортирует `все ssl_server*.conf`
