@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # доступ к docker из контейнера для обновления файлов в 3x-ui
-      - ./_work/update-geo/geo:/app/geo            # persistent storage для geo-файлов   (для мониторинга и отладки)
+      - ./_work/geo-update/geo:/app/geo            # persistent storage для geo-файлов
     working_dir: /app
     environment:
       PYTHONUNBUFFERED: 1

@@ -12,14 +12,14 @@ from datetime import datetime
 from pathlib import Path
 import signal
 import threading
-from typing import Generator
+from typing import Iterator
 
 import docker
 import requests
 
 # Configuration
 WORKDIR = Path("/app/geo")     # Persistent volume mounted from host
-APPDIR = "/app/bin"            # Target directory in 3x-ui container
+APPDIR = Path("/app/bin")      # Target directory in 3x-ui container
 XRAY_CONTAINER_NAME = "3x-ui"  # Docker compose service name
 PROCESS_NAME = "xray-linux"    # Xray process name to signal
 
@@ -57,7 +57,7 @@ logger.setLevel(numeric_level)
 log = logger
 docker_client = None
 
-def iter_geo_files() -> Generator[str, str, int]:
+def iter_geo_files() -> Iterator[tuple[str, str]]:
     """Generator yielding (url, filename) tuples from GEO_FILES."""
     for geo_file in GEO_FILES:
         yield geo_file["url"], geo_file["filename"]
@@ -101,7 +101,7 @@ def download_file(url, filepath):
     response.raise_for_status()
 
     with open(filepath, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=8192):
+        for chunk in response.iter_content(chunk_size=1024*1024):
             f.write(chunk)
 
     if get_file_size(filepath) == 0:
@@ -115,16 +115,15 @@ def copy_file_to_container(container, local_file, remote_path):
     target_dir = os.path.dirname(remote_path)
     tar_path = None
     try:
+        # Create tar archive        
         with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as tar_file:
             tar_path = tar_file.name
-            container.exec_run(f"mkdir -p {target_dir}", user="root")
-
-            # Create tar archive
             with tarfile.open(name=tar_path, mode='w') as tar:
                 tar.add(local_file, arcname=os.path.basename(remote_path))
 
-        # Read the tar file and put archive into container
+        # Put the archive into container
         with open(tar_path, 'rb') as f:
+            container.exec_run(f"mkdir -p {target_dir}", user="root")
             result = container.put_archive(target_dir, f)
             if not result:
                 raise RuntimeError(f"Failed to copy to container: {local_file.name}")
@@ -175,7 +174,7 @@ def geo_update():
         local_file = WORKDIR / filename
         local_size = get_file_size(local_file)
         
-        container_file = f"{APPDIR}/{filename}"
+        container_file = APPDIR / filename;
         container_size = get_container_file_size(container, container_file)
         
         if local_size != container_size:
