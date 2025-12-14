@@ -15,9 +15,12 @@ server {
     root /www/ssl;
     index index.html;
 
-    # Secure subscription endpoint - requires exact path match
+    # Секретный URL, требует точного совпадения (=)
+    # Отдает список ключей. Должно быть base64-закодировано, hiddify, happ понимают, 
+    # но nekoray не понимает. Отдаем txt.
     location = $SUBSCRIPTION_URL {
-        alias /www/subscription/ss.base64;
+        # alias /www/subscription/ss.base64;
+        alias /www/subscription/ss.txt;
         default_type text/plain;
     }
 
