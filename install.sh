@@ -1,5 +1,5 @@
 # RELEASE=release/3.3
-RELEASE=main
+RELEASE=master
 
 set -e  # остановиться при ошибке
 
