@@ -1,17 +1,17 @@
-RELEASE=feature/rusreadme
+RELEASE=master
 
 set -e  # остановиться при ошибке
 
 GREEN=$(tput setaf 2) # Set foreground color to red
 NC=$(tput sgr0)    # Reset all attributes
 
-cat << EOF 
+cat << EOF
 $GREEN
 
       VPS со своим HTTPS для VLESS
       (вариант steal-from-yourself)
 
-* получение и авто-продление реального HTTPS сертификата oт Let's Encrypt
+* получение и авто-продление HTTPS сертификата oт Let's Encrypt
 * 3X-UI - панель управления VPN сервером XRay-core
 * файлообменник с веб-мордой
 * автоматическое обновление geoip и geoip_RU файлов
