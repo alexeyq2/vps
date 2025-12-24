@@ -9,21 +9,21 @@ cat << EOF
 $GREEN
 
       VPS со своим HTTPS для VLESS
-      (вариант steal-from-yourself)
+      (Reality steal-from-yourself)
 
-* получение и авто-продление HTTPS сертификата oт Let's Encrypt
-* 3X-UI - панель управления VPN сервером XRay-core
-* файлообменник с веб-мордой
-* автоматическое обновление geoip и geoip_RU файлов
-* URL подписки для программ-клиентов (subscription URL)
-  в которой можно указать несколько ваших серверов
+получение и авто-продление HTTPS сертификата oт Let's Encrypt
+3X-UI - панель управления VPN сервером XRay-core
+обновление geoip и geoip_RU файлов XRay
+рандомный URL подписки для программ-клиентов (subscription URL)
+  - можно указать несколько серверов для авто-переключения и обновления
+файлообменник с веб-мордой
 
-Подготовка машины:
-* Установка git, docker, утилит, настройка сети
-* Скачивание кода проекта
+начинается подготовка машины
+* установка git, docker, утилит, настройка сети
+* скачивание кода проекта
+
 $NC
 EOF
-
 
 if ! sudo --version >/dev/null; then
     [ $EUID != 0 ] && echo "Не установлен sudo и не root доступ, установка невозможна" && exit 1 
@@ -106,7 +106,7 @@ VPS_DIR=vps-vless
 
 if [ -d $VPS_DIR ] ;then
     echo "$GREEN Папка $VPS_DIR уже есть, обновляем код... $NC"
-    echo "$GREEN Если не получится - удалите папку $VPS_DIR и запустите скрипт снова $NC"
+    echo "$GREEN Если не получится - переименуйте папку $VPS_DIR и запустите скрипт снова $NC"
 
     cd $VPS_DIR
     git fetch
@@ -119,6 +119,19 @@ else
     cd $VPS_DIR
     git checkout $RELEASE
 fi
+
+# Генерация случайного URL для подписки
+
+cp .env.default .env
+
+generate_random_string() {
+    local length=${1:-16}
+    head -c 4096 /dev/urandom | tr -dc 'a-z0-9' | head -c "$length"
+}
+
+RANDOM_SUB="/subs$(generate_random_string 8)"
+echo "Генерируем SUBSCRIPTION_URL: $RANDOM_SUB"
+sed -i "s|^SUBSCRIPTION_URL=.*|SUBSCRIPTION_URL=$RANDOM_SUB|" .env
 
 cat << EOF
 $GREEN

@@ -3,7 +3,7 @@
 # Ubuntu 24.04
 # Закрывает все входящие порты кроме указанных
 
-KEEP_PORTS=(443 8822 7777)
+KEEP_PORTS=(443 51022 51053 51054 51055 51056 51057 51058 51059 51060)
 BACKUP_DIR="/root/config-backups-$TIMESTAMP"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 
@@ -60,6 +60,22 @@ echo "Устанавливаем политики по умолчанию: deny 
 ufw default deny incoming
 ufw default allow outgoing
 
+# Маскировка под домашний компьютер - отключаем ping и скрываем информацию о TCP
+echo "Отключаем ответы на ping (icmp echo)..."
+echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_all 2>/dev/null || true
+grep -q "^net.ipv4.icmp_echo_ignore_all = 1" /etc/sysctl.conf || echo "net.ipv4.icmp_echo_ignore_all = 1" >> /etc/sysctl.conf
+
+echo "Отключаем ICMP timestamp и redirect..."
+echo 0 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts 2>/dev/null || true
+grep -q "^net.ipv4.icmp_echo_ignore_broadcasts = 0" /etc/sysctl.conf || echo "net.ipv4.icmp_echo_ignore_broadcasts = 0" >> /etc/sysctl.conf
+
+# Скрываем версию SSH
+echo "Скрываем информацию о SSH (отключаем баннер)..."
+grep -q "^Banner none" /etc/ssh/sshd_config || echo "Banner none" >> /etc/ssh/sshd_config
+
+# Применяем sysctl
+sysctl -p >/dev/null 2>&1 || true
+
 # Разрешаем loopback
 ufw allow in on lo
 
@@ -74,6 +90,17 @@ if [[ ! " ${KEEP_PORTS[*]} " =~ " ${CURRENT_SSH_PORT} " ]]; then
   echo "Разрешаем текущий SSH-порт $CURRENT_SSH_PORT временно (не меняем sshd_config)."
   ufw allow "$CURRENT_SSH_PORT"/tcp comment "temporary allow current ssh port $CURRENT_SSH_PORT"
 fi
+
+# Меняем SSH порт на 51022
+NEW_SSH_PORT=51022
+echo "Меняем SSH порт на $NEW_SSH_PORT..."
+sed -i "s/^Port [0-9]*/Port $NEW_SSH_PORT/" /etc/ssh/sshd_config 2>/dev/null || echo "Port $NEW_SSH_PORT" >> /etc/ssh/sshd_config
+echo "SSH порт изменён на $NEW_SSH_PORT"
+
+# Перезапускаем SSH
+echo "Перезапускаем SSH сервис..."
+systemctl restart sshd 2>/dev/null || service ssh restart 2>/dev/null || true
+echo "SSH сервис перезапущен"
 
 # Включаем UFW
 echo "Включаем UFW..."

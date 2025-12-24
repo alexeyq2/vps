@@ -46,3 +46,6 @@ Purpose: help an AI coding agent be productive quickly by describing architectur
 Ask the repo owner for clarification if any change touches `srv/` data, secret files, or live certificate flows.
 
 If anything here is unclear or you want more details (example runs, tests to execute, or expanded description of `geo_update` internals), tell me which area to expand.
+
+- Code comments
+Все комментарии пишутся по-русски. Скрипты выводят сообщения и вопросы по-русски.
