@@ -37,15 +37,16 @@
 
 ### Запуск, остановка, логи
 
-* `./up.sh`   # docker compose up [-d]
-* `./down.sh` # docker compose down
+* `./up.sh`   # docker compose up [-d]  # создать/запустить контейнеры
+* `./stop.sh` # docker compose down     # остановить контейнеры
+* `./down.sh` # docker compose down     # удалить контейнеры перед апгрейдом
 * `./log.sh`  # docker compose logs [-f]
 
 ### Проверить, что certbot получил сертификат:
 
- `./logs.sh -f certbot`
+ `./log.sh -f certbot | grep received`
 
-Ожидаемый вывод
+в `./log.sh -f certbot` должно быть что-то вроде:
 
 ```
 certbot-1      | Successfully received certificate.
