@@ -1,4 +1,4 @@
-RELEASE=feature/rusreadme
+RELEASE=release/3.3
 
 set -e  # остановиться при ошибке
 
