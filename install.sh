@@ -102,7 +102,7 @@ fi
 
 
 ## Код проекта
-VPS_DIR=vps-vless
+VPS_DIR=vps
 
 if [ -d $VPS_DIR ] ;then
     echo "$GREEN Папка $VPS_DIR уже есть, обновляем код... $NC"
