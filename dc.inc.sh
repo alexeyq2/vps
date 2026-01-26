@@ -1,5 +1,9 @@
-# есть новый "docker compose" ?
-export DC="docker compose"
-`$DC version > /dev/null 2>&1` || export DC="docker-compose"
-
-# echo DC=$DC
+yamls=(compose*.yaml)
+FILES=${yamls[@]}
+OPT=""
+for y in $FILES; do
+  OPT="$OPT -f $y"
+done
+#
+export DC="docker compose $OPT"
+echo -e "\033[0;34m  [$DC] \033[0;34m"
