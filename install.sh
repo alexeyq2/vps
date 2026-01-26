@@ -8,15 +8,15 @@ NC=$(tput sgr0)    # Reset all attributes
 cat << EOF 
 $GREEN
 
-      VPS со своим HTTPS для VLESS
-      (вариант steal-from-yourself)
+      VPS со своим HTTPS-сайтом для VLESS
+            (steal-from-yourself)
 
-* получение и авто-продление реального HTTPS сертификата oт Let's Encrypt
+* получение и авто-продление HTTPS сертификата oт Let's Encrypt
 * 3X-UI - панель управления VPN сервером XRay-core
 * файлообменник с веб-мордой
 * автоматическое обновление geoip и geoip_RU файлов
 * URL подписки для программ-клиентов (subscription URL)
-  в которой можно указать несколько ваших серверов
+  для автообновления ключей (новые серверы и тд)
 
 Подготовка машины:
 * Установка git, docker, утилит, настройка сети
@@ -65,7 +65,7 @@ add_if_missing "net.ipv4.tcp_congestion_control=bbr" && CHANGED=true
 $CHANGED && sudo sysctl -p >/dev/null 2>&1
 
 echo $GREEN Текущие настройки TCP:
-sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc
+sudo sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc
 echo $NC
 
 
