@@ -61,20 +61,21 @@ certbot-1      | NEXT STEPS:
 
 `http://VPS_IP_ADDRESS:2053` admin:admin
 
-1. сменить порт с 2053 на что-то побольше чем 10000
-2. включить HTTPS - указать сертификат и ключ к нему
-
-   `./print-my-opts.sh` напечатает путь к сертификату, как его указывать в панели
+1. сменить порт с 2053 на что-то побольше типа 52050
+2. сменить URI path на рандом вроде /vps52050
+3. включить HTTPS - указать сертификат и ключ к нему.  `./print-my-opts.sh` напечатает путь к сертификату, как его указывать в панели
    
 3. сменить пароль админа
 
 ### Cоздайте Inbound в 3X-UI
 
-Входящее HTTPS-соединение попадает на 3X-UI, это он сидит на внешнем интерфейсе. Nginx слушает только на внутреннем `localhost:10443`. 3X-UI перенаправляет внешний порт 443 на внутренний nginx.
+Чтобы заработал сайт, нужно сначала настроить X-Ray
 
     браузер -> VPS_DOMAIN:443 
         -> 3x-ui vless inbound:443
             -> nginx docker container:10443 
+
+Входящее HTTPS-соединение попадает на 3X-UI, это он сидит на внешнем интерфейсе. Nginx слушает только на внутреннем `localhost:10443`. 3X-UI перенаправляет внешний порт 443 на внутренний nginx. SSL обеспечивает nginx, являяесь донором для *X-Ray XTLS Reality (steal from yourself*).
 
 
 Параметры Inbound в 3X-UI (остальные можно не трогать):
@@ -86,7 +87,19 @@ certbot-1      | NEXT STEPS:
         SNI: VPS_DOMAIN
         Public Key/Private Key - нажмите кнопку "Get New Cert"
 
-С таким Inbound будет работать сайт `https://VPS_DOMAIN` - сейчас на нем крутится FileBrowser, пароль от админа он напечатал при первом старте. 
+С таким Inbound будет работать сайт `https://VPS_DOMAIN` - сейчас на нем крутится FileBrowser, пароль от админа он напечатал при первом старте.
+
+## Пароль к FileBrowser
+
+Пишется в лог при первом старте. Посмотреть:
+
+`./filebrowser-password.sh` по сути  `docker compose logs | grep password`
+
+Чтобы сбросить - нужно удалить **все данные** filebrowser и он создаст новый пароль и напишет в лог. Следующая команда сделает это и выведет пароль:
+
+`./filebrowser-delete-data.sh`
+    
+    filebrowser-1  | User 'admin' initialized with randomly generated password: zbKQSdn9VJPM6kAV
 
 ### Переключение с тестового сертификата на боевой
 
@@ -111,19 +124,6 @@ certbot-1      | NEXT STEPS:
 Специальный `https://$YOURDOMAIN/$SUBSCRIPTION_URL` показывает содержимое файла `srv/nginx/www/subscription/ss.base64`. Меняя этот файл мы обновляем всех клиентов. Подробности в srv/nginx/www/subscription/README.txt
 
 Subscription - полезная фича.
-
-## Пароль к FileBrowser
-
-Пишется в лог при первом старте. Посмотреть:
-
-`./filebrowser-password.sh` по сути  `docker compose logs | grep password`
-
-Чтобы сбросить - нужно удалить **все данные** filebrowser и он создаст новый пароль и напишет в лог. Следующая команда сделает это и выведет пароль:
-
-`./filebrowser-delete-data.sh`
-    
-    filebrowser-1  | User 'admin' initialized with randomly generated password: zbKQSdn9VJPM6kAV
-
 
 ## Обновление
 
