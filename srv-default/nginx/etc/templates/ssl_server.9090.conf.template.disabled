@@ -1,0 +1,25 @@
+# ! открывая порты в compose.yml (не забывать - частая ошибка)
+# на других портах можно запускать доп сервера https
+# включить - убрать у этого файла расширение .disabled и перезапустить
+server {        
+    listen 9090 ssl;
+    listen [::]:9090;
+    server_name         $VPS_DOMAIN;
+
+    ssl_certificate     /etc/letsencrypt/live/$VPS_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$VPS_DOMAIN/privkey.pem;
+
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # пусть docker занимается ротацией лог-файлов
+    access_log /dev/stdout hide_client_ip;
+    error_log /dev/stderr crit;
+
+    root /www/ssl;
+    index index.html;
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

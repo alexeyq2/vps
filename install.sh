@@ -72,7 +72,7 @@ echo $NC
 ## DOCKER COMPOSE v2
 
 if docker compose --version &> /dev/null ;then
-    echo "$GREEN Docker уже установлен, отлично! OK $NC"
+    echo "$GREEN Docket compose уже установлен, OK $NC"
     DOCKER_WARNING=
 else
     DOCKER_WARNING="Установлен docker. Выполните команду newgrp docker или перелогинитьтесь"
