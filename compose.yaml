@@ -58,6 +58,7 @@ services:
       - 9090:9090 # можно запустить доп ssl сервер на 9090, например
     environment:
       - VPS_DOMAIN=${VPS_DOMAIN}
+      - FILEZ_URL=${FILEZ_URL}
       - FILEBROWSER_URL=${FILEBROWSER_URL}
       - SUBSCRIPTION_URL=${SUBSCRIPTION_URL}
     command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/conf.d/default.conf"]

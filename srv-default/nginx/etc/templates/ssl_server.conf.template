@@ -22,8 +22,8 @@ server {
         default_type text/plain;
     }
 
-    # сюда можно положить файлы через SSH и скачивать по https://VPS_DOMAIN/SIMPLE_SHARE/1.txt
-    location $SIMPLE_SHARE {
+    # сюда можно положить файлы через SSH и скачивать по https://VPS_DOMAIN/FILEZ_URL/1.txt
+    location $FILEZ_URL {
         alias /www/ssl;
     }
 
