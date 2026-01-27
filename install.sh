@@ -1,6 +1,5 @@
-# RELEASE=release/3.3
-RELEASE=master
-
+RELEASE=release/3.3
+# RELEASE=master
 set -e  # остановиться при ошибке
 
 GREEN=$(tput setaf 2) # Set foreground color to red
