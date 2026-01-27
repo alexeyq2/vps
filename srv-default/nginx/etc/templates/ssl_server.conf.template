@@ -15,15 +15,19 @@ server {
     root /www/ssl;
     index index.html;
 
-    # Секретный URL, требует точного совпадения (=)
-    # Отдает список ключей. Должно быть base64-закодировано, hiddify, happ понимают, 
-    # но nekoray не понимает. Отдаем txt.
+    # Подиска для программ-клиентов
+    # Секретный URL, требует точного совпадения (=). Отдает список ключей серверов. 
     location = $SUBSCRIPTION_URL {
-        # alias /www/subscription/ss.base64;
         alias /www/subscription/ss.txt;
         default_type text/plain;
     }
 
+    # сюда можно положить файлы через SSH и скачивать по https://VPS_DOMAIN/SIMPLE_SHARE/1.txt
+    location $SIMPLE_SHARE {
+        alias /www/ssl;
+    }
+
+    # редирект на веб-шару по дефолту при заходе на https://VPS_DOMAIN
     location / {
         return 302 $FILEBROWSER_URL;
 
@@ -31,6 +35,7 @@ server {
         # try_files $uri $uri/ =404;
     }
 
+    # веб-шара
     location $FILEBROWSER_URL {
         proxy_pass http://filebrowser:80;
     }
