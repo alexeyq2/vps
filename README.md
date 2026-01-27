@@ -103,7 +103,7 @@ certbot-1      | NEXT STEPS:
     
     filebrowser-1  | User 'admin' initialized with randomly generated password: zbKQSdn9VJPM6kAV
 
-### Переключение с тестового сертификата на боевой
+### Переключение с тестового сертификата на настоящий
 
 Если всё работает и сайт открывается с тестовым SSL, можно получить реальный сертификат:
 
