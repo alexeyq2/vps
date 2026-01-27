@@ -1,4 +1,5 @@
-RELEASE=release/3.3
+# RELEASE=release/3.3
+RELEASE=main
 
 set -e  # остановиться при ошибке
 
