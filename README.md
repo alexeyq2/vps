@@ -13,7 +13,7 @@
 `curl -sL https://raw.githubusercontent.com/alexeyq2/vps/refs/heads/master/install.sh | bash`
 
 ## Настройка
-1. Создайть файл  `.env` из шаблона
+1. Создать файл  `.env` из шаблона
 
     `cp .env-default .env` 
 
