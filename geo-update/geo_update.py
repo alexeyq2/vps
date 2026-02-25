@@ -241,6 +241,7 @@ def main():
     while True:
         start_time = time.time()
         try:
+            log.warning(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Starting geofiles update")
             geo_update()
             elapsed = int(time.time() - start_time)
             log.info(f"Geofiles update OK in {elapsed} sec")
