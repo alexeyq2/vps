@@ -225,10 +225,13 @@ def initial_delay():
 
         log.info(f"Begin geofiles update in {delay} seconds")
         time.sleep(delay)
-    
+
+def now_str():
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 def main():
     """Main loop"""
-    log.info("START")
+    log.info(f"{now_str()} START")
     signal.signal(signal.SIGTERM, _handle_termination)
     signal.signal(signal.SIGINT, _handle_termination)
     WORKDIR.mkdir(parents=True, exist_ok=True)
@@ -241,7 +244,7 @@ def main():
     while True:
         start_time = time.time()
         try:
-            log.warning(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Starting geofiles update")
+            log.warning(f"{now_str()} Starting geofiles update")
             geo_update()
             elapsed = int(time.time() - start_time)
             log.info(f"Geofiles update OK in {elapsed} sec")
