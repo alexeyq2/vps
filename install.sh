@@ -120,7 +120,7 @@ add_if_missing "net.ipv4.tcp_wmem = 4096 65536 16777216"
 # Увеличение очереди входящих пакетов
 add_if_missing "net.core.netdev_max_backlog = 10000"
 
-$CHANGED && sudo sysctl -p >/dev/null 2>&1
+sudo sysctl -p >/dev/null 2>&1
 
 echo $GREEN Текущие настройки TCP:
 sudo sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc \
@@ -140,8 +140,8 @@ sudo systemctl edit docker.service
 ini
 
 [Service]
-LimitNOFILE=1000000
-LimitNPROC=1000000
+LimitNOFILE=65535
+LimitNPROC=65535
 
 
 # Завершение
