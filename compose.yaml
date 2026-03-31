@@ -81,8 +81,9 @@ services:
       - ./srv/filebrowser/config:/config
     environment:
       - FB_BASE_URL=${FILEBROWSER_URL}
+      - FB_TOKEN_EXPIRATION_TIME=720h # 30d
     logging:
       # driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "2"
+        max-size: 50m
+        max-file: 2
