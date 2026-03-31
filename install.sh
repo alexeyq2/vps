@@ -2,8 +2,8 @@
 RELEASE=master
 set -e  # остановиться при ошибке
 
-GREEN=$(tput setaf 2) # Set foreground color to red
-NC=$(tput sgr0)    # Reset all attributes
+export GREEN=$(tput setaf 2) # Set foreground color to red
+export NC=$(tput sgr0)    # Reset all attributes
 
 cat << EOF 
 $GREEN
@@ -89,66 +89,25 @@ else
     git checkout $RELEASE
 fi
 
-## Настройки сети итд
+## Настройки системы
 
-# уменьшить размер системных логов - логи докера могут разрастись до гигабайт в /var/log/journal
+# уменьшить размер логов - логи докера могут разрастись до гигабайт в /var/log/journal
 grep "SystemMaxUse=100M" /etc/systemd/journald.conf >/dev/null \
 || echo "SystemMaxUse=100M" | sudo tee -a /etc/systemd/journald.conf
 
 sudo systemctl restart systemd-journald
 echo Syslog настроен OK
 
-## до-настройка TCP
+## до-настройка сети и докера
 
-add_if_missing() {
-    grep -q "^[[:space:]]*$1[[:space:]]*=" "/etc/sysctl.conf" 2>/dev/null || {
-        echo "$1" | sudo tee -a "/etc/sysctl.conf"
-        return 0
-    }
-    return 1
-}
-
-# Увеличение максимального числа открытых файлов в системе
-add_if_missing "net.core.default_qdisc = fq"
-add_if_missing "net.ipv4.tcp_congestion_control = bbr"
-add_if_missing "fs.file-max = 100000"
-# Увеличение размеров буферов TCP для быстрой передачи данных
-add_if_missing "net.core.rmem_max = 16777216" 
-add_if_missing "net.core.wmem_max = 16777216"
-add_if_missing "net.ipv4.tcp_rmem = 4096 87380 16777216"
-add_if_missing "net.ipv4.tcp_wmem = 4096 65536 16777216"
-# Увеличение очереди входящих пакетов
-add_if_missing "net.core.netdev_max_backlog = 10000"
-
-sudo sysctl -p >/dev/null 2>&1
-
-echo $GREEN Текущие настройки TCP:
-sudo sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc \
-    net.core.rmem_max net.core.wmem_max \
-    net.ipv4.tcp_rmem net.ipv4.tcp_wmem \
-    net.core.netdev_max_backlog
-echo $NC
-
-Даже если вы прописали ulimits в compose, при network_mode: host надежнее задать лимиты на уровне сервиса Docker, так как процесс Xray фактически становится процессом хоста.
-Создайте или отредактируйте файл переопределения для Docker:
-bash
-
-sudo systemctl edit docker.service
-
-Используйте код с осторожностью.
-Добавьте туда строки:
-ini
-
-[Service]
-LimitNOFILE=65535
-LimitNPROC=65535
-
+./install-net-limits.sh
+./install-docker-limits.sh
 
 # Завершение
 
 cat << EOF
 $GREEN
-Вроде все OK
+Всё OK!
 $DOCKER_WARNING
 Переходите в папку $VPS_DIR и настройте файл .env по инструкции в README.md
 

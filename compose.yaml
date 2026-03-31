@@ -42,10 +42,11 @@ services:
     labels:
       - certbot_restart
     network_mode: host
-    ulimits:
-      nofile:
-        soft: 65535
-        hard: 65535      
+    # при network host лимиты нужно ставить на докер сервис, а не на контейнер. делается в install-set-limits.sh
+    # ulimits:
+    #   nofile:
+    #     soft: 65535
+    #     hard: 65535      
 
   nginx:
     image: nginx
@@ -65,10 +66,14 @@ services:
       - FILEZ_URL=${FILEZ_URL}
       - FILEBROWSER_URL=${FILEBROWSER_URL}
       - SUBSCRIPTION_URL=${SUBSCRIPTION_URL}
+    # entrypoint: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']
     command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/conf.d/default.conf"]
     labels:
       - certbot_restart
-    # entrypoint: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535      
 
   filebrowser:
     image: filebrowser/filebrowser:s6
