@@ -1,4 +1,4 @@
-# RELEASE=release/3.3
+# RELEASE=release/3.4
 RELEASE=master
 set -e  # остановиться при ошибке
 
@@ -125,5 +125,5 @@ $GREEN
 Вроде все OK
 $DOCKER_WARNING
 Переходите в папку $VPS_DIR и настройте файл .env по инструкции в README.md
-
+$NC
 EOF
