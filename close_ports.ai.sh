@@ -3,7 +3,7 @@
 # Ubuntu 24.04
 # Закрывает все входящие порты кроме указанных
 
-KEEP_PORTS=(443 8822 7777)
+KEEP_PORTS=(80 443 8443 51022 51053 7777 9090)
 BACKUP_DIR="/root/config-backups-$TIMESTAMP"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 
