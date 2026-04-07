@@ -3,7 +3,7 @@
 # Ubuntu 24.04
 # Закрывает все входящие порты кроме указанных
 
-KEEP_PORTS=(80 443 8443 51022 51053 7777 9090)
+KEEP_PORTS=(80 443 8443 51022 51053 9090 5201)
 BACKUP_DIR="/root/config-backups-$TIMESTAMP"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 
@@ -80,13 +80,13 @@ echo "Включаем UFW..."
 ufw --force enable
 
 # Настройка автоматических обновлений (unattended-upgrades)
-echo "Включаем unattended-upgrades (автоматические обновления безопасности)..."
-cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
-APT::Periodic::Update-Package-Lists "1";
-APT::Periodic::Download-Upgradeable-Packages "1";
-APT::Periodic::AutocleanInterval "7";
-APT::Periodic::Unattended-Upgrade "1";
-EOF
+# echo "Включаем unattended-upgrades (автоматические обновления безопасности)..."
+# cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+# APT::Periodic::Update-Package-Lists "1";
+# APT::Periodic::Download-Upgradeable-Packages "1";
+# APT::Periodic::AutocleanInterval "7";
+# APT::Periodic::Unattended-Upgrade "1";
+# EOF
 
 # Информация о состоянии
 echo

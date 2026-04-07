@@ -5,5 +5,5 @@ source dc.inc.sh
 # - certbot не качается docker compose pull потому что он компилируется
 docker pull certbot/certbot:latest
 # скачать новые образы остальных сервисов
-docker compose pull
+$DC pull
 
