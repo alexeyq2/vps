@@ -62,9 +62,9 @@ services:
       - FILEBROWSER_URL=${FILEBROWSER_URL}
       - SUBSCRIPTION_URL=${SUBSCRIPTION_URL}
     command: ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/conf.d/default.conf"]
+    # command: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']  # for debug
     labels:
       - certbot_restart
-    # entrypoint: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']
 
   filebrowser:
     image: filebrowser/filebrowser:s6
