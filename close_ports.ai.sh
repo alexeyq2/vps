@@ -4,8 +4,9 @@
 # Закрывает все входящие порты кроме указанных
 
 KEEP_PORTS=(80 443 8443 51022 51053 9090 5201)
-BACKUP_DIR="/root/config-backups-$TIMESTAMP"
+
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
+BACKUP_DIR="/root/config-backups-$TIMESTAMP"
 
 set -euo pipefail
 
@@ -39,14 +40,7 @@ if [[ ! "$CONF" =~ ^([yY][eE][sS]|[yY])$ ]]; then
   exit 0
 fi
 
-# Обновление пакетов (только apt update/upgrade)
-echo "Обновление пакетов..."
-apt update -y
-apt upgrade -y
-
-# Установка ufw и unattended-upgrades (fail2ban НЕ устанавливается)
-echo "Установка необходимых пакетов (ufw, unattended-upgrades)..."
-apt install -y ufw unattended-upgrades apt-listchanges
+apt install -y ufw
 
 # Резервное копирование конфигураций
 cp -a /etc/ufw "$BACKUP_DIR/ufw.bak" || true
@@ -79,15 +73,6 @@ fi
 echo "Включаем UFW..."
 ufw --force enable
 
-# Настройка автоматических обновлений (unattended-upgrades)
-# echo "Включаем unattended-upgrades (автоматические обновления безопасности)..."
-# cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
-# APT::Periodic::Update-Package-Lists "1";
-# APT::Periodic::Download-Upgradeable-Packages "1";
-# APT::Periodic::AutocleanInterval "7";
-# APT::Periodic::Unattended-Upgrade "1";
-# EOF
-
 # Информация о состоянии
 echo
 echo "UFW status:"
@@ -99,7 +84,7 @@ echo
 
 if [[ ! " ${KEEP_PORTS[*]} " =~ " ${CURRENT_SSH_PORT} " ]]; then
   echo "ВНИМАНИЕ: текущий SSH-порт $CURRENT_SSH_PORT был временно разрешён в UFW."
-  echo "Когда убедитесь, что доступ по нужным портам (например, 8822) установлен и не требуется старый порт,"
+  echo "Когда убедитесь, что доступ по нужным портам (например, 51022) установлен и не требуется старый порт,"
   echo "удалите правило командой (пример):"
   echo "  ufw delete allow ${CURRENT_SSH_PORT}/tcp"
 fi
