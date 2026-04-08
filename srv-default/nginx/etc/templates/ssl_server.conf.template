@@ -40,8 +40,13 @@ server {
         proxy_pass http://filebrowser:80;
     }
 
+    # страница с редиректом, если "plain http sent to https port"
+    error_page 497 /error-497-plain-http.html;
+    location /error-497-plain-http.html {
+        try_files $uri $uri =404;
+    }
+
     # пусть docker занимается ротацией лог-файлов
     access_log /dev/stdout hide_client_ip;
-    error_log  /dev/stderr crit;
-    error_page 497 /error-497-plain-http.html;
+    error_log  /dev/stderr crit;    
 }
