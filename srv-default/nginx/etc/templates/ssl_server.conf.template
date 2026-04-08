@@ -24,7 +24,7 @@ server {
 
     # сюда можно положить файлы через SSH и скачивать по https://VPS_DOMAIN/FILEZ_URL/1.txt
     location $FILEZ_URL {
-        alias /www/ssl;
+        alias /www/ssl/filez;
     }
 
     # редирект на веб-шару по дефолту при заходе на https://VPS_DOMAIN

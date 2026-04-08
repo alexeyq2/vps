@@ -79,7 +79,8 @@ services:
       - FB_BASE_URL=${FILEBROWSER_URL}
       - FB_TOKEN_EXPIRATION_TIME=720h
     logging:
-      # driver: "json-file"
+      # много cron логов у filebrowser, чтобы не засорять system лог - пустим в небольшой файл
+      driver: "json-file"
       options:
-        max-size: "50m"
+        max-size: "10m"
         max-file: "2"
