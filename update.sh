@@ -1,10 +1,8 @@
 #!/bin/bash -e
 
-./down.sh
-
 ./update-images.sh
-./update-code-and-build.sh
-
+./update-code.sh
+./down.sh
 ./up.sh
 
 # Функция, которая будет вызвана при нажатии Ctrl+C
