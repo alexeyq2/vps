@@ -43,5 +43,5 @@ server {
     # пусть docker занимается ротацией лог-файлов
     access_log /dev/stdout hide_client_ip;
     error_log  /dev/stderr crit;
-    error_lage 497 /error-497-plain-http.html;
+    error_page 497 /error-497-plain-http.html;
 }
