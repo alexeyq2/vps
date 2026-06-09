@@ -1,0 +1,365 @@
+# This is an example of the configuration file for mtg. You actually can
+# run mtg with it. It starts a proxy on all interfaces with a secret
+# ee367a189aee18fa31c190054efd4a8e9573746f726167652e676f6f676c65617069732e636f6d
+#
+# It has all possible options with default values. So, a real world
+# configuration file should contain only those options you are going to
+# use. You do not need to enumerate all of them. In other words, each
+# option here has a default value. If you comment a key-value pair, it
+# should not make any effect.
+#
+# stats is the only exception.
+
+# Debug starts application in debug mode. It starts to be quite verbose
+# in output. Actually, the idea is that you run it in debug mode only if
+# you have any issue.
+debug = true
+
+# A secret. Please remember that mtg supports only FakeTLS mode, legacy
+# simple and secured mode are prohibited. For you it means that secret
+# should either be base64-encoded or starts with ee.
+# secret = "ee367a189aee18fa31c190054efd4a8e9573746f726167652e676f6f676c65617069732e636f6d"
+secret = "ee6fbda2bac46614f8a1aeb5209223466776647a792e6d696e656372616674722e7573"
+
+# Host:port pair to run proxy on.
+bind-to = "0.0.0.0:3128"
+
+# This defines what types of traffic mtg listens to. If you are not sure,
+# then definitely keep it disable. Enable it only and only if incoming traffic
+# is coming from some sort of load-balancer like HAProxy or ELB.
+# https://www.haproxy.org/download/2.3/doc/proxy-protocol.txt
+#
+# mtg uses a library that supports v1 and v2 versions of ProxyProtocol.
+# default value is false.
+# proxy-protocol-listener = false
+
+# Defines how many concurrent connections are allowed to this proxy.
+# All other incoming connections are going to be dropped.
+concurrency = 8192
+
+# Sometimes you want to enforce mtg to use some types of
+# IP connectivity to Telegram. We have 4 modes:
+#   - prefer-ipv6:
+#     We can use both ipv4 and ipv6 but ipv6 has a preference
+#   - prefer-ipv4:
+#     We can use both ipv4 and ipv6 but ipv4 has a preference
+#   - only-ipv6:
+#     Only ipv6 connectivity is used
+#   - only-ipv4:
+#     Only ipv4 connectivity is used
+prefer-ip = "prefer-ipv6"
+
+# Public IP addresses of this server. Used by 'mtg access' to generate
+# proxy links and by 'mtg doctor' to validate SNI-DNS match.
+# If not set, mtg tries to detect them automatically via ifconfig.co.
+# Set these if ifconfig.co is unreachable from your server.
+# public-ipv4 = "1.2.3.4"
+# public-ipv6 = "2001:db8::1"
+
+# If this setting is set, then mtg will try to get proxy updates from Telegram
+# Usually this is completely fine to have it disabled, because mtg has a list
+# of some core proxies hardcoded.
+auto-update = true
+
+# FakeTLS uses domain fronting protection. So it needs to know a port to
+# access.
+#
+# Deprecated: use [domain-fronting] configuration block. If relevant option
+# is defined there, this one would be ignored.
+# domain-fronting-port = 443
+
+# By default, mtg resolves the fronting hostname (from the secret) via DNS
+# to establish a TCP connection. If DNS resolution of that hostname is blocked,
+# you can specify an IP address to connect to directly. The hostname is still
+# used for SNI in the TLS handshake.
+#
+# default value is not set (DNS resolution is used).
+#
+# Deprecated: use [domain-fronting] configuration block. If relevant option
+# is defined there, this one would be ignored.
+# domain-fronting-ip = "10.0.0.10"
+
+# This makes a communication between both fronting website and mtg to use
+# proxy protocol.
+#
+# Deprecated: use [domain-fronting] configuration block. If relevant option
+# is defined there, this one would be ignored.
+# domain-fronting-proxy-protocol = false
+
+# FakeTLS can compare timestamps to prevent probes. Each message has
+# encrypted timestamp. So, mtg can compare this timestamp and decide if
+# we need to proceed with connection or not.
+#
+# Sometimes time can be skewed so we accept all messages within a
+# time range of this parameter.
+tolerate-time-skewness = "5s"
+
+# Telegram has a concept of DC. You can think about DC as a number of a cluster
+# with a certain purpose. Some clusters serve media, some - messages, some rule
+# channels and so on. But sometimes unknown DC number is requested by client.
+# It could be a bug or some global reconfiguration of the Telegram.
+#
+# By default, proxy rejects such requests. But it is also possible to fallback
+# this request to any DC. Telegram works in a way that any DC is able to serve
+# any request but sacrificing a latency.
+#
+# If this setting is disabled (default), mtg will reject a connection.
+# Otherwise, chose a new DC.
+allow-fallback-on-unknown-dc = false
+
+# This section is relevant to communication with fronting domain. Usually
+# you do not need to setup anything here but there are plenty of cases, especially
+# if you put mtg behind load balancer, when some specific configuration is
+# required.
+[domain-fronting]
+# By default, mtg resolves the fronting hostname (from the secret) via DNS
+# to establish a TCP connection. If DNS resolution of that hostname is blocked,
+# you can specify an IP address to connect to directly. The hostname is still
+# used for SNI in the TLS handshake.
+#
+# default value is not set (DNS resolution is used).
+# ip = "10.10.10.11"
+# ip = "127.0.0.1"
+# port = "10443"
+
+# FakeTLS uses domain fronting protection. So it needs to know a port to
+# access. Default value is 443
+# port = 443
+
+# This makes a communication between both fronting website and mtg to use
+# proxy protocol.
+# proxy-protocol = false
+
+# network defines different network-related settings
+[network]
+# please be aware that mtg needs to do some external requests. For
+# example, if you do not pass public ips, it will request your public ip
+# address from some external service.
+#
+# As for 2.0, if you set a public-ip on your own, mtg won't issue any
+# network requests except of those required for Telegram.
+#
+# so, in order of doing them, it needs to do DNS lookup. mtg ignores DNS
+# resolver of the operating system and uses DOH instead. This is a host
+# it has to access.
+#
+# By default we use Cloudflare.
+#
+# DEPRECATED option:
+#  If dns option is specified, it will be used instead. No default is defined
+#  anymore. But if you set this option, this is literally the same providing
+#  https:// URL to `dns`.
+#
+#  In other words:
+#
+#    doh-ip = "1.1.1.1"
+#
+# is literally the same as
+#
+#    dns = "https://1.1.1.1"
+# doh-ip = "1.1.1.1"
+
+# Starting from mtg v2.1.12 we have changed a configuration for DNS. Now it
+# supports DNS-over-HTTPS, DNS-over-TLS, custom UDP resolver and system
+# resolver.
+#
+# Here is how to define DNS-over-HTTPS:
+#  - https://1.1.1.1
+#  - https://1.1.1.1/dns-query
+#  - https://cloudflare-dns.com/dns-query
+#  - https://cloudflare-dns.com
+#
+# Here is how to define DNS-over-TLS:
+#  - tls://1.1.1.1
+#  - tls://cloudflare-dns.com
+#
+# Here is how to define a custom UDP resolver (we support only IPs here)
+#  - 1.1.1.1
+#  - udp://1.1.1.1
+#
+# If you set it to empty string, default resolver will be used.
+# But please comment out doh-ip
+# dns = "https://1.1.1.1"
+dns = "tls://1.1.1.1"
+
+# mtg can work via proxies (for now, we support only socks5). Proxy
+# configuration is done via list. So, you can specify many proxies
+# there.
+#
+# Actually, if you supply an empty list, then no proxies are going to be
+# used. If you supply a single proxy, then mtg will use it exclusively.
+# If you supply >= 2, then mtg will load balance between them.
+#
+# If you add an empty string here, this is an equivalent of 'plain network',
+# with no proxy usage.
+#
+# Proxy configuration is done via ordinary URI schema:
+#
+#     socks5://user:password@host:port
+#
+# Only socks5 proxy is used. user/password is optional. As you can
+# see, you can specify some parameters in GET query. These parameters
+# configure circuit breaker.
+proxies = [
+    # "socks5://user:password@host:port"
+]
+
+# network timeouts define different settings for timeouts. tcp timeout
+# define a global timeout on establishing of network connections. idle
+# means a timeout on pumping data between sockset when nothing is
+# happening.
+#
+# please be noticed that handshakes have no timeouts intentionally. You can
+# find a reasoning here:
+# https://www.ndss-symposium.org/wp-content/uploads/2020/02/23087-paper.pdf
+[network.timeout]
+tcp = "5s"
+http = "10s"
+idle = "1m"
+
+# mtg has to mimic real websites. It does not mean domain fronting, it also
+# means that traffic characteristics should be similar to real world traffic.
+# websites and applications behave differently, their traffic patterns are also
+# different. Applications do bursts of RPC-style messages (or JSON communication,
+# does not really matter), while websites pump heavy content in HTTP2 streams
+#
+# It means that statistically there is a different between traffic shape:
+# delays between packets are also different.
+# In order to avoid censorship detection based on these patterns, there is a
+# mtg subsystem called "Doppelganger" that aims to mimic website statistics
+# as close as it could.
+#
+# Delays between TLS packets are not constant. There are many factors
+# that come in play. Application should generate some response, it could
+# send some headers first and stream content with chunked encoding. So
+# some first packets could come as soon as possible, with some delays
+# after first ones. Such phenomenon is described by different statistic
+# distribution. There are 2 distribution that describe it: lognormal
+# distribution and Weibul distribution. Lognormal is all about steady streams
+# of heavy content like a video. Weibul is great about short bursts like
+# user who requested a static page an a couple of images.
+[defense.doppelganger]
+# This is a list of URLs that would be crawled by mtg to approximate delay
+# statistics. They MUST be HTTPS urls.
+#
+# You can come to the website and collect different URLs, with light and
+# heavy content. We recommend to search for CDNs.
+urls = [
+    # "https://st-ok.cdn-vk.ru/res/react/vendor/clsx-2.1.1-amd.js"
+]
+# A collection is done in raids. Each raid makes this number of requests to
+# each URL in this list. Do not use a huge number, 10 is probably ok.
+repeats-per-raid = 10
+# This is a duration between each raid. It makes no sense to have a small number
+# here as you would start to make a noticeable activity. Usually traffic patterns
+# do not change a lot, so do not expect different results if you request
+# each 10 minutes.
+raid-each = "6h"
+# This enables dynamic tls record sizing.
+#
+# Some modern stacks and platforms start to use the technique that is called
+# DRS. They start with small TLS packets and ramp up eventually. First packets
+# are usually about MTU size, after that we get 4k and eventually max size.
+# This is done with a good intention: to minimize a time to the first byte,
+# so application could start doing something with the data right after first
+# RTT.
+#
+# Apparently, about 90% of application do not employ this technique, they use
+# max size always: nginx, apache, java stuff. But Golang tools, angie and
+# some specific patches activate this technique.
+#
+# In order to mimic a real website we need to know something about software
+# it uses. Usually nobody cares: openssl does 16384, Python does it, nginx
+# does it. So this setting is disabled by default.
+#
+#      https://blog.cloudflare.com/optimizing-tls-over-tcp-to-reduce-latency/
+#      https://aws.github.io/s2n-tls/usage-guide/ch08-record-sizes.html
+#      https://github.com/cloudflare/sslconfig/blob/master/patches/nginx__dynamic_tls_records.patch
+drs = false
+
+# Some countries do active probing on Telegram connections. This technique
+# allows to protect from such effort.
+#
+# mtg has a cache of some connection fingerprints. Actually, first bytes
+# of each connection. So, it stores them in some in-memory LRU+TTL cache.
+# You can configure this cache here.
+[defense.anti-replay]
+# You can enable/disable this feature.
+enabled = true
+# max size of such a cache. Please be aware that this number is
+# approximate we try hard to store data quite dense but it is possible
+# that we can go over this limit for 10-20% under some conditions and
+# architectures.
+max-size = "1mib"
+# we use stable bloom filters for anti-replay cache. This helps
+# to maintain a desired error ratio.
+error-rate = 0.001
+
+# You can protect proxies by using different blocklists. If client has
+# ip from the given range, we do not try to do a proper handshake. We
+# actually route it to fronting domain. So, this client will never ever
+# have a chance to use mtg to access Telegram.
+#
+# Please remember that blocklists are initialized in async way. So,
+# when you start a proxy, blocklists are empty, they are populated and
+# processed in backgrounds. An error in any URL is ignored.
+[defense.blocklist]
+# You can enable/disable this feature.
+enabled = true
+# This is a limiter for concurrency. In order to protect website
+# from overloading, we download files in this number of threads.
+download-concurrency = 2
+# A list of URLs in FireHOL format (https://iplists.firehol.org/)
+# You can provider links here (starts with https:// or http://) or
+# path to a local file, but in this case it should be absolute.
+urls = [
+    "https://iplists.firehol.org/files/firehol_level1.netset",
+    # "/local.file"
+]
+# How often do we need to update a blocklist set.
+update-each = "24h"
+
+# Allowlist is an opposite to a blocklist. Only those IPs that are coming from
+# subnets defined in these lists are allowed. All others will be rejected.
+#
+# If this feature is disabled, then there won't be any check performed by this
+# validator. It is possible to combine both blocklist and whitelist.
+[defense.allowlist]
+# You can enable/disable this feature.
+enabled = false
+# This is a limiter for concurrency. In order to protect website
+# from overloading, we download files in this number of threads.
+download-concurrency = 2
+# A list of URLs in FireHOL format (https://iplists.firehol.org/)
+# You can provider links here (starts with https:// or http://) or
+# path to a local file, but in this case it should be absolute.
+urls = [
+    # "https://iplists.firehol.org/files/firehol_level1.netset",
+    # "/local.file"
+
+]
+update-each = "24h"
+
+# statsd statistics integration.
+[stats.statsd]
+# enabled/disabled
+enabled = false
+# host:port for UDP endpoint of statsd
+address = "127.0.0.1:8888"
+# prefix of metric for statsd
+metric-prefix = "mtg"
+# tag format to use
+# supported values are 'datadog', 'influxdb' and 'graphite'
+# default format is graphite.
+tag-format = "datadog"
+
+# prometheus metrics integration.
+[stats.prometheus]
+# enabled/disabled
+enabled = true
+# host:port where to start http server for endpoint
+bind-to = "0.0.0.0:3129"
+# prefix of http path
+http-path = "/"
+# prefix for metrics for prometheus
+metric-prefix = "mtg"
