@@ -31,7 +31,7 @@ services:
     # entrypoint: ['/bin/sh', '-c', 'while :; do echo here; sleep 60; done']
 
   3x-ui:
-    image: ghcr.io/mhsanaei/3x-ui:latest
+    image: ghcr.io/mhsanaei/3x-ui:2.8.11
     restart: unless-stopped
     volumes:
       - ./srv/3x-ui/etc/x-ui/:/etc/x-ui/

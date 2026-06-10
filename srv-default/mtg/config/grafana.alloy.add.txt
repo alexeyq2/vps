@@ -1,0 +1,4 @@
+prometheus.scrape "mtg" {
+  targets = [{"__address__" = "127.0.0.1:3129", "instance" = constants.hostname }]
+  forward_to = [prometheus.remote_write.metrics_service.receiver]
+}

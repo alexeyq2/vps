@@ -18,8 +18,9 @@ debug = true
 # A secret. Please remember that mtg supports only FakeTLS mode, legacy
 # simple and secured mode are prohibited. For you it means that secret
 # should either be base64-encoded or starts with ee.
-# secret = "ee367a189aee18fa31c190054efd4a8e9573746f726167652e676f6f676c65617069732e636f6d"
-secret = "ee6fbda2bac46614f8a1aeb5209223466776647a792e6d696e656372616674722e7573"
+# DOMAIN NAME IS EMBEDDED IN THE SECRET
+# docker run --rm nineseconds/mtg:2 generate-secret --hex google.com
+secret = "ee00e6c429d48dfe12cf52a7ddb992f9df676f6f676c652e636f6d"
 
 # Host:port pair to run proxy on.
 bind-to = "0.0.0.0:3128"
