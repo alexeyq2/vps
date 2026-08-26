@@ -2,8 +2,8 @@
 # на других портах можно запускать доп сервера https
 # включить - убрать у этого файла расширение .disabled и перезапустить
 server {        
-    listen 9090 ssl;
-    listen [::]:9090;
+    listen 9090 ssl http2;
+    listen [::]:9090 http2;
     server_name         $VPS_DOMAIN;
 
     ssl_certificate     /etc/letsencrypt/live/$VPS_DOMAIN/fullchain.pem;
