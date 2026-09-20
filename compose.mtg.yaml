@@ -1,0 +1,11 @@
+services:
+  mtg:
+    image: nineseconds/mtg:2
+    restart: unless-stopped
+    volumes:
+      - ./srv/mtg/config:/config
+    ports:
+      - 8443:3128
+      - 127.0.0.1:3129:3129
+
+
